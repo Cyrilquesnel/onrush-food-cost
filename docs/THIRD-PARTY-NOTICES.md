@@ -7,3 +7,7 @@ Les modules intégrés de Node.js sont utilisés pour les tâches locales de con
 Le nom Onrush et les éventuels signes distinctifs de SAS La Fabrique Alimentaire ne sont pas concédés par la licence MIT du code. Aucun logo ou contenu tiers ne doit être ajouté sans vérification de ses droits. Les exemples de recette sont fictifs et ne constituent pas des données clients.
 
 Si une dépendance, une image, une police, un extrait ou un jeu de données externe est ajouté ultérieurement, relever sa provenance, sa version, sa licence et ses obligations d’attribution dans ce fichier avant diffusion. La présente notice ne concède aucun droit sur un composant futur.
+
+## Identité Onrush et Montserrat
+
+Icône officielle Onrush : copie inchangée de `public/brand/v1/icon-light.svg`, exportée en PNG 16/48/128 pour Chrome. La marque et son logo restent exclus de la licence MIT du code. Police Montserrat variable, latin normal, copiée inchangée depuis la fonte locale officielle `app/_fonts/montserrat-latin.woff2` d’Onrush ; licence SIL Open Font License reproduite dans `MONTSERRAT-OFL.txt`. Aucun chargement de police distant.

@@ -1,7 +1,6 @@
 import { mkdir, readdir, readFile, writeFile, copyFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deflateSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -15,25 +14,6 @@ function crc32(data) {
   let crc = 0xffffffff;
   for (const byte of data) crc = crcTable[(crc ^ byte) & 255] ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;
-}
-function pngChunk(type, data) {
-  const name = Buffer.from(type);
-  const header = Buffer.alloc(4); header.writeUInt32BE(data.length);
-  const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(Buffer.concat([name, data])));
-  return Buffer.concat([header, name, data, crc]);
-}
-function icon(size) {
-  const pixels = Buffer.alloc(size * (1 + size * 4));
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    const dx = (x + .5) / size - .5, dy = (y + .5) / size - .5;
-    const ring = dx * dx + dy * dy < .29 ** 2 && dx * dx + dy * dy > .15 ** 2;
-    const dot = dx > .23 && dx < .34 && dy > .2 && dy < .31;
-    const rgba = ring || dot ? [233, 255, 141, 255] : [23, 60, 50, 255];
-    const offset = y * (1 + size * 4) + 1 + x * 4;
-    for (let i = 0; i < 4; i++) pixels[offset + i] = rgba[i];
-  }
-  const header = Buffer.alloc(13); header.writeUInt32BE(size); header.writeUInt32BE(size, 4); header[8] = 8; header[9] = 6;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), pngChunk('IHDR', header), pngChunk('IDAT', deflateSync(pixels)), pngChunk('IEND', Buffer.alloc(0))]);
 }
 async function filesUnder(directory, prefix = '') {
   const result = [];
@@ -75,7 +55,7 @@ for (const target of [site, extension]) {
 await writeFile(path.join(site, '.nojekyll'), '');
 for (const entry of ['manifest.json', 'background.js']) await copyFile(path.join(root, 'extension', entry), path.join(extension, entry));
 await mkdir(path.join(extension, 'icons'));
-for (const size of [16, 48, 128]) await writeFile(path.join(extension, 'icons', `${size}.png`), icon(size));
+for (const size of [16, 48, 128]) await copyFile(path.join(root, 'brand-icons', `${size}.png`), path.join(extension, 'icons', `${size}.png`));
 const extensionZip = zip(await filesUnder(extension));
 await writeFile(path.join(dist, 'chrome-extension.zip'), extensionZip);
 const siteZip = zip(await filesUnder(site));
