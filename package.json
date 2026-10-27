@@ -1,0 +1,13 @@
+{
+  "name": "onrush-food-cost",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Calculateur pédagogique autonome de coût matière et food cost",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "node scripts/build.mjs",
+    "serve": "node scripts/serve.mjs"
+  }
+}

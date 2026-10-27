@@ -1,6 +1,13 @@
 MIT License
 
-Copyright (c) 2026 Cyrilquesnel
+Copyright (c) 2026 SAS La Fabrique Alimentaire
+
+Scope: This license applies only to the original source code, tests, build
+scripts, accompanying documentation and fictitious recipe examples created
+specifically for the standalone Onrush food-cost calculator and its Chrome
+extension in this directory. It does not license the existing Onrush SaaS,
+customer data, trademarks, logos or third-party materials. Trademark rights are
+not granted. Third-party material, if added, remains subject to its own license.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

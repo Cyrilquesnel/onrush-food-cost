@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Calculez gratuitement le coût matière par portion, le food cost et la marge matière d’une recette. Méthode transparente et calculs dans votre navigateur.">
+  <meta name="theme-color" content="#163c32">
+  <title>Coût matière et food cost — calculateur Onrush</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#calculator">Aller au calculateur</a>
+  <header class="site-header wrap">
+    <a class="brand" href="./" aria-label="Accueil du calculateur Onrush"><span class="brand-mark" aria-hidden="true">o</span>onrush<span class="brand-dot">.</span></a>
+    <span class="header-note">Un outil gratuit, une méthode ouverte</span>
+  </header>
+  <main class="wrap">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">LES BONS CHIFFRES, AVANT LE SERVICE</p>
+      <h1 id="page-title">Chaque portion<br>compte.</h1>
+      <p class="intro-copy">Calculez le coût matière de votre recette et vérifiez votre food cost. Sans inscription, avec les formules sous les yeux.</p>
+      <p class="local-note"><span aria-hidden="true">✓</span> Vos saisies restent dans votre navigateur. <a href="privacy.html">Confidentialité</a></p>
+    </section>
+    <noscript><p class="error-box">Activez JavaScript pour utiliser le calculateur. La <a href="#method">méthode de calcul</a> reste consultable ci-dessous.</p></noscript>
+    <div class="calculator-grid" id="calculator">
+      <form id="recipe-form" class="panel editor" novalidate>
+        <div class="panel-top"><h2>Votre recette</h2><span id="example-badge" class="badge">Exemple fictif</span></div>
+        <div class="actions-small"><button type="button" id="load-example" class="text-button">Charger l’exemple</button><button type="button" id="clear" class="text-button muted">Effacer</button></div>
+        <div id="error-summary" class="error-box" hidden tabindex="-1"></div>
+        <div class="field"><label for="recipe-name">Nom de la recette <span class="optional">facultatif</span></label><input id="recipe-name" name="recipeName" maxlength="100" autocomplete="off"><span id="error-recipeName" class="field-error" hidden></span></div>
+        <div class="field-pair">
+          <div class="field"><label for="portions">Portions obtenues</label><input id="portions" name="portions" inputmode="decimal" autocomplete="off" aria-describedby="portions-help"><small id="portions-help">Pour la recette entière</small><span id="error-portions" class="field-error" hidden></span></div>
+          <div class="field"><label for="sale-price">Prix de vente / portion <span class="optional">facultatif</span></label><div class="input-suffix"><input id="sale-price" name="salePrice" inputmode="decimal" autocomplete="off" placeholder="Ex. 10,00"><span>€ HT</span></div><span id="error-salePrice" class="field-error" hidden></span></div>
+        </div>
+        <div class="section-heading"><h3>Les ingrédients</h3><span>Quantités de la recette entière</span></div>
+        <p class="field-guide">Saisissez vos prix <strong>HT au kg, au litre ou à l’unité</strong>. Virgule et point décimaux acceptés, sans séparateur de milliers.</p>
+        <div id="ingredients"></div>
+        <span id="error-ingredients" class="field-error" hidden></span>
+        <button type="button" id="add-ingredient" class="add-button"><span aria-hidden="true">＋</span> Ajouter un ingrédient</button>
+        <details class="help-box"><summary>Quel rendement utiliser ?</summary><p>Le rendement correspond aux pertes avant cuisson. Pour obtenir 600 g nets avec 80 % de rendement, vous achetez 750 g. Saisissez 100 % si votre quantité correspond déjà à la quantité achetée.</p><p>N’utilisez pas ici un rendement après cuisson ou réhydratation. Aucune conversion entre grammes et millilitres n’est automatique.</p></details>
+        <button class="primary-button calculate" type="submit">Calculer ma recette <span aria-hidden="true">→</span></button>
+      </form>
+      <aside class="panel results" aria-labelledby="results-title">
+        <p class="eyebrow">LE RÉSULTAT</p><h2 id="results-title">Votre coût, par portion.</h2>
+        <div id="empty-results" class="empty-results"><span aria-hidden="true">↗</span><p>Complétez votre recette, puis lancez le calcul.</p></div>
+        <div id="results-content" hidden>
+          <div class="main-result"><span>Coût matière par portion</span><strong id="portion-cost"></strong><span>HT / portion</span></div>
+          <dl class="metrics"><div><dt>Recette entière</dt><dd id="recipe-cost"></dd></div><div id="food-cost-row"><dt>Food cost</dt><dd id="food-cost"></dd></div><div id="margin-row"><dt>Marge matière / portion</dt><dd id="material-margin"></dd></div><div id="margin-percent-row"><dt>Marge matière</dt><dd id="margin-percent"></dd></div></dl>
+          <p id="sale-price-note" class="result-note" hidden>Ajoutez un prix de vente HT pour calculer le food cost et la marge matière.</p>
+          <p id="negative-note" class="warning-note" hidden>Le coût matière dépasse le prix de vente saisi.</p>
+          <p id="zero-note" class="warning-note" hidden>Un prix d’achat est nul. Vérifiez qu’il est intentionnel.</p>
+          <div class="breakdown"><h3>Le détail des ingrédients</h3><ul id="cost-breakdown"></ul><small>Le total utilise les valeurs complètes, avant arrondi d’affichage.</small></div>
+          <p class="result-note">La marge matière ne tient pas compte des autres charges du restaurant.</p>
+          <button id="export-csv" type="button" class="secondary-button">Exporter mon calcul en CSV <span aria-hidden="true">↓</span></button>
+          <p class="fine-print">Export local, valeurs finales à 6 décimales. Aucun envoi de votre recette.</p>
+        </div>
+        <div class="resource-card"><p>Pour suivre toute votre carte</p><a id="onrush-resource" href="https://onrush.fr/ressources/template-food-cost?utm_source=github_pages&amp;utm_medium=referral&amp;utm_campaign=outil_food_cost_202610&amp;utm_content=calculateur">Découvrir le modèle food cost Onrush <span aria-hidden="true">↗</span></a></div>
+      </aside>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <section id="method" class="method" aria-labelledby="method-title"><div><p class="eyebrow">LA MÉTHODE, SANS BOÎTE NOIRE</p><h2 id="method-title">Des calculs que vous<br>pouvez vérifier.</h2></div><div class="method-copy"><h3>1. Ramener l’achat à la quantité utilisée</h3><p>Coût ingrédient = prix HT par kg, litre ou unité × quantité nette dans cette même unité ÷ rendement.</p><h3>2. Diviser par les portions obtenues</h3><p>Coût matière par portion = somme des coûts ingrédients ÷ nombre de portions. Aucun coût n’est arrondi avant le total.</p><h3>3. Comparer au prix de vente HT</h3><p>Food cost = coût matière par portion ÷ prix de vente HT × 100. Marge matière = prix de vente HT − coût matière par portion.</p><p>Exemple fictif : 10 €/kg, 600 g nets, rendement 80 %, trois portions. Coût de recette : 7,50 € ; coût par portion : 2,50 €. À 10 € HT le plat, le food cost est de 25 %.</p><p class="fine-print">MVP : EUR et HT, 100 ingrédients maximum, pas de TVA automatique, de coût de revient complet ni de synchronisation avec Onrush. Le résultat dépend des hypothèses saisies. Version <span id="version"></span> · 27 octobre 2026.</p></div></section>
+  </main>
+  <footer class="wrap site-footer"><p>Outil pédagogique proposé par Onrush.</p><nav aria-label="Documentation"><a href="README.md">Documentation</a><a href="https://github.com/Cyrilquesnel/onrush-food-cost">Code source</a><a href="LICENSE">Licence du projet autonome</a><a href="privacy.html">Confidentialité</a></nav></footer>
+</body>
+</html>
