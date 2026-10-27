@@ -10,4 +10,6 @@ Si une dépendance, une image, une police, un extrait ou un jeu de données exte
 
 ## Identité Onrush et Montserrat
 
+Pour l’icône Chrome de 128 px, le SVG officiel intact est rendu à 96 px et placé au centre avec une marge transparente de 16 px de chaque côté, conformément aux recommandations de taille du Chrome Web Store. Cette mise à taille ne modifie ni le tracé ni les couleurs de la marque.
+
 Icône officielle Onrush : copie inchangée de `public/brand/v1/icon-light.svg`, exportée en PNG 16/48/128 pour Chrome. La marque et son logo restent exclus de la licence MIT du code. Police Montserrat variable, latin normal, copiée inchangée depuis la fonte locale officielle `app/_fonts/montserrat-latin.woff2` d’Onrush ; licence SIL Open Font License reproduite dans `MONTSERRAT-OFL.txt`. Aucun chargement de police distant.
