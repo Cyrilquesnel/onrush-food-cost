@@ -1,0 +1,5 @@
+wave,date_locale_cible,timezone,statut,date_reelle,note
+R1,2026-10-27,Indian/Mauritius,observee,2026-10-27,"R1 observée réellement ; prochaines vagues programmées via automatisation Onrush, dates réelles à conserver"
+R2,2026-11-10,Indian/Mauritius,a_collecter,,"Automatisation active, matin vers 08h Indian/Mauritius ; aucune observation future encore effectuée ; conserver date réelle"
+R3,2026-11-24,Indian/Mauritius,a_collecter,,"Automatisation active, matin vers 08h Indian/Mauritius ; aucune observation future encore effectuée ; conserver date réelle"
+R4,2026-12-08,Indian/Mauritius,a_collecter,,"Automatisation active, matin vers 08h Indian/Mauritius ; aucune observation future encore effectuée ; conserver date réelle"

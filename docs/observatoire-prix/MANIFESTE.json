@@ -1,0 +1,80 @@
+{
+  "version": "1.1.0",
+  "wave": "R1",
+  "date_observee": "2026-10-27",
+  "perimetre": "Couverture et méthode uniquement; relevés bruts exclus",
+  "fichiers": [
+    {
+      "fichier": "rapport-pilote-r1.pdf",
+      "octets": 53399,
+      "sha256": "cf2fbc9a569f4bf72825b6cefa92b3cff2143f5d0a8445923bbcf0f023b340d5",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "rapport-pilote-r1.md",
+      "octets": 7828,
+      "sha256": "9c0f48ff7275cb48a1bb5aedb07e786f891d42b2458b9ddfaba2761d0f67c1db",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "couverture-r1.csv",
+      "octets": 7187,
+      "sha256": "88fc21c3dd04163ca6865e757223fe8b0932b376fb9b652fc94517a1d8ad327a",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "resultats-couverture.json",
+      "octets": 656,
+      "sha256": "f22e0068be3a2e0f7727f62abecabbc5bcb0aa158f1e604d3336086e8e5d262e",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "panier.csv",
+      "octets": 1520,
+      "sha256": "70099e17d408a761c050c4e30e44a4758f919aedeaace3bd278da9f45f8905cf",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "calendrier.csv",
+      "octets": 738,
+      "sha256": "3e7e0cbc70c4e858d7c985e58a5f615191917c352f9c04e82997fef507a704dc",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "analyse_couverture.py",
+      "octets": 2192,
+      "sha256": "3a1a8b2a161bc2bfda9d8ef7b9ede016e426f3378a280d34bd0a6763e4f0ed5c",
+      "licence": "MIT"
+    },
+    {
+      "fichier": "test_couverture.py",
+      "octets": 1199,
+      "sha256": "cbe7e3c25da7d7bb42ac55a8ac1c0f088edc9257d63e43d9578ffdbfa00495f8",
+      "licence": "MIT"
+    },
+    {
+      "fichier": "METHODE.md",
+      "octets": 2403,
+      "sha256": "38a2f02b961301209ac97c555781e925667da6db68ae542e51ffcb43eb8373ed",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "README.md",
+      "octets": 1853,
+      "sha256": "11cd5ffc008634330a25fd9521153b739b9a0b5eedfd04c52660562bba5a92af",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "LICENSE-CONTENUS.md",
+      "octets": 996,
+      "sha256": "e12a2e3f65e0d49286a91da4f6735bc11afb4578267e3e4380810c9fe72c6ea6",
+      "licence": "CC-BY-4.0; hors droits tiers"
+    },
+    {
+      "fichier": "LICENSE-CODE.txt",
+      "octets": 1234,
+      "sha256": "c93c16e7a28efb177363d520c3c5236352e90914684032df886e4e5155fa3d74",
+      "licence": "MIT"
+    }
+  ]
+}

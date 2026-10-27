@@ -93,6 +93,10 @@ GitHub Pages est envisagé pour **la documentation et la démonstration pédagog
 
 Le contenu de `dist/site/` est déployable comme site statique. Contrôler les chemins sur l’URL réelle, l’accessibilité publique, l’absence de `noindex` accidentel et l’intégrité du calcul après déploiement. Aucune URL de dépôt ou de site n’est inventée ici. La publication sur une plateforme n’assure ni indexation, ni position Google, ni citation IA, ni transfert automatique d’autorité au domaine Onrush.
 
+## Pilote de collecte des prix
+
+Consulter le [rapport pédagogique R1 du 27 octobre 2026](https://cyrilquesnel.github.io/onrush-food-cost/observatoire-prix/) : dix références, trois catalogues et trente prix observés. Les fichiers publics permettent de reproduire la couverture et sa qualification fiscale ; ils ne contiennent aucun montant brut. Une journée observée ne permet pas de mesurer une tendance. Le rapport institutionnel, sa méthode, son code et ses licences sont joints ; cette publication Web ne constitue pas un dépôt Zenodo. Ce pilote relève de ses licences propres : CC BY 4.0 pour le rapport et les annotations originales, MIT pour son code d’analyse, hors droits tiers.
+
 ## Attribution et licence
 
 Outil pédagogique proposé par **Onrush**, édité par **SAS La Fabrique Alimentaire**. Pour le contexte et les ressources complémentaires, consulter [Onrush](https://onrush.fr).

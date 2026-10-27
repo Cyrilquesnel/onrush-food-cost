@@ -1,0 +1,33 @@
+{
+  "targets": 30,
+  "prices_observed": 30,
+  "missing_prices": 0,
+  "known_tax": 20,
+  "unknown_tax": 10,
+  "coverage_pct": 100.0,
+  "tax_qualification_pct": 66.66666666666667,
+  "waves": [
+    "R1"
+  ],
+  "sources": {
+    "CER": {
+      "targets": 10,
+      "prices_observed": 10,
+      "known_tax": 0,
+      "unknown_tax": 10
+    },
+    "CUI": {
+      "targets": 10,
+      "prices_observed": 10,
+      "known_tax": 10,
+      "unknown_tax": 0
+    },
+    "MDC": {
+      "targets": 10,
+      "prices_observed": 10,
+      "known_tax": 10,
+      "unknown_tax": 0
+    }
+  },
+  "scope": "Effectifs de couverture uniquement; aucun montant de catalogue joint"
+}
