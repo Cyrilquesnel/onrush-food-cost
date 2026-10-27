@@ -1,10 +1,12 @@
 # Calculateur coût matière et food cost — Onrush
 
+Démonstration pédagogique : https://cyrilquesnel.github.io/onrush-food-cost/
+
 Outil pédagogique libre pour calculer le coût matière d’une recette, le coût par portion, le food cost et la marge matière. Il fonctionne sans compte, sans API et sans connexion au SaaS Onrush. Les calculs et l’export CSV sont effectués dans le navigateur.
 
 Ce répertoire contient exclusivement du code neuf pour cet outil autonome. Aucun code ou jeu de données du SaaS Onrush n’y est incorporé.
 
-Dépôt du projet : [Cyrilquesnel/onrush-food-cost](https://github.com/Cyrilquesnel/onrush-food-cost). Une éventuelle démonstration publique est distincte du dépôt ; sa disponibilité se vérifie sur son URL effective.
+Dépôt du projet : [Cyrilquesnel/onrush-food-cost](https://github.com/Cyrilquesnel/onrush-food-cost). La démonstration publique utilise une copie statique de cet outil, distincte du SaaS Onrush.
 
 ## Utilisation et calcul
 
