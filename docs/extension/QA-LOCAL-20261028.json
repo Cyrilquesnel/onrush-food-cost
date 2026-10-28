@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "createdAt": "2026-10-28T06:40:47.238Z",
+  "createdAt": "2026-10-28T07:21:32.298Z",
   "repository": "Cyrilquesnel/onrush-food-cost",
   "release": {
     "version": "1.0.0",
@@ -22,16 +22,7 @@
   "notes": [
     "No Chrome Web Store submission or signed CRX installation is tested."
   ],
-  "completedAt": "2026-10-28T06:40:47.262Z",
-  "validationContext": {
-    "baseCommit": "e27617ffdc740eae89e2301d08af8153de6fe9eb",
-    "localNode": "v24.19.0",
-    "expectedRunnerNode": "22.23.4",
-    "repositoryPublicVerifiedVia": "GET https://api.github.com/repos/Cyrilquesnel/onrush-food-cost : private=false, visibility=public",
-    "browserExecutionPerformed": false,
-    "remotePushPerformed": false,
-    "workflowDispatched": false
-  },
+  "completedAt": "2026-10-28T07:21:32.336Z",
   "existingTests": {
     "command": "node --test test/*.test.js",
     "passed": 16,
@@ -78,18 +69,53 @@
     "apiPermissionsDeclared": false,
     "hostPermissionsDeclared": false
   },
+  "validationContext": {
+    "baseCommit": "88548eadd10f96be9f929e620468a95215713390",
+    "localNode": "v24.19.0",
+    "expectedRunnerNode": "22.23.4",
+    "repositoryPublicVerifiedVia": "GET https://api.github.com/repos/Cyrilquesnel/onrush-food-cost : private=false, visibility=public",
+    "browserExecutionPerformed": false,
+    "remotePushPerformed": false,
+    "workflowDispatched": false
+  },
+  "identityContracts": {
+    "command": "node scripts/qa-extension.mjs --self-test-identity",
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "versionComparison": "Exact getManifest version 1.0.0; no component-equivalence relaxation"
+  },
+  "previousRemoteRun": {
+    "runId": 40647831798,
+    "sourceCommit": "88548eadd10f96be9f929e620468a95215713390",
+    "jobId": 122680680927,
+    "artifactId": 12797709499,
+    "status": "failed",
+    "observedVersion": "1.0",
+    "expectedManifestVersion": "1.0.0",
+    "errorAt": "2026-10-28T07:06:03Z",
+    "checksCompleted": 1,
+    "workerIdentityRecorded": false,
+    "completeBrowserQaPassed": false,
+    "normalizationClaimed": false
+  },
   "preparedFiles": [
     {
       "path": "scripts/qa-extension.mjs",
-      "sha256": "20b1332ec012090cdc9f5afd971370f97e6a81c4561c10dfbdd993b4bdc3c28b"
+      "sha256": "e65fa0b2b7d76065555d530f3151aacf6bf6614f79b02c2912b25daa607551cd"
     },
     {
       "path": ".github/workflows/extension-qa.yml",
-      "sha256": "eb7ff672d3754825bc3d52d6fff96ad8c602219d27a54c8df36852f34814c424"
+      "sha256": "458987d81a35a70360a32cacafc83d66be18ae200f4a80a8cd2080b0c6070290"
     },
     {
       "path": "docs/extension/QA-ISOLATED.md",
-      "sha256": "e13f14b6c1b2b68460cf11ae3a5930e25b92ff42d8c6620f57b412e5cb8b7aa4"
+      "sha256": "8678b63b950d869b68e4eedc098b68d6b00fd11350e970cd6ba8352d126d88c3"
     }
-  ]
+  ],
+  "consoleReport": {
+    "prefix": "QA_REPORT ",
+    "format": "one-line JSON",
+    "scope": "own temporary unmanaged browser; no account, secrets or policy values"
+  }
 }

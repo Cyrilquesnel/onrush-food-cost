@@ -95,9 +95,25 @@ node scripts/qa-extension.mjs --self-test-policy
 
 Ils sont exécutés avant l’installation des utilitaires du runner. Leur réussite valide le garde de lecture du JSON ; elle ne démontre pas l’absence de politiques dans un navigateur non exécuté.
 
+### Identité du service worker et premier échec conservé
+
+Le [premier run manuel 40647831798](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40647831798), au commit `88548eadd10f96be9f929e620468a95215713390`, a échoué le 28 octobre 2026 à 07:06 UTC, job `122680680927`. Le ZIP avait passé sa vérification, mais le script a lu une version `1.0` sur le premier service worker `background.js` trouvé, puis l’a comparée à `1.0.0`. Les contrôles complets d’installation, de politiques, d’action, de calcul, de CSV et de rechargement hors ligne n’ont pas été terminés. L’artefact de ce run porte l’ID `12797709499` ; cet échec reste historique et n’est pas renommé en réussite.
+
+La [documentation des versions](https://developer.chrome.com/docs/extensions/reference/manifest/version) considère les composantes absentes comme zéro pour comparer des versions. Cela ne permet pas de remplacer l’assertion exacte sur `getManifest()` : la [documentation runtime](https://developer.chrome.com/docs/extensions/reference/api/runtime#getManifest) décrit la sérialisation du manifest complet, confirmée par [HandleGetManifest dans Chromium 156](https://github.com/chromium/chromium/blob/156.0.8078.73/extensions/renderer/api/runtime_hooks_delegate.cc#L481) et son [test de fidélité du manifest](https://github.com/chromium/chromium/blob/156.0.8078.73/extensions/renderer/api/runtime_hooks_delegate_unittest.cc#L174). Aucune normalisation de `1.0.0` vers `1.0` n’est donc revendiquée.
+
+Le correctif sonde les workers candidats et conserve leur ID, URL, nom, version, type de manifest et CSP **avant** sélection dans `extension-candidates.json`. Il n’accepte que le nom, la version exacte `1.0.0`, Manifest V3, le worker et la CSP du ZIP validé, avec un ID cohérent avec l’URL. Les assertions strictes après sélection et les contrôles suivants restent en place. Les métadonnées du premier run n’identifient pas le worker interrogé ; l’hypothèse d’un composant Chrome sélectionné à tort ne sera confirmée que par les traces d’une nouvelle exécution.
+
+Sept contrats ciblés refusent les composants, versions différentes, noms/CSP modifiés, anciens manifests, mauvais chemins et IDs incohérents :
+
+```sh
+node scripts/qa-extension.mjs --self-test-identity
+```
+
 ## Rapports et portée de la conclusion
 
 Le workflow conserve pendant sept jours les rapports JSON, captures PNG, CSV de test et journaux explicitement sélectionnés dans `qa-artifacts/`, ainsi que commit source, SHA du ZIP extension, version Node, version Chrome et provenance du téléchargement Chrome. Il n’archive ni le binaire Chrome, ni un profil navigateur, ni un cache complet.
+
+Le script écrit aussi une ligne `QA_REPORT ` suivie du rapport JSON dans le journal du job, afin que le connecteur de logs puisse relire le résultat sans téléchargement binaire. Cette trace concerne uniquement le navigateur isolé, sans compte connecté ni valeur de politique administrée ; les captures restent dans l’artefact.
 
 L’upload s’exécute aussi après un échec afin de préserver la preuve disponible. L’absence de rapport exploitable ou de fichier de preuve n’est pas un succès implicite. Relever l’URL du run, sa tentative, le commit qualifié et les constats vérifiables avant de mettre à jour le statut public de l’extension.
 

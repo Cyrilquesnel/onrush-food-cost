@@ -64,6 +64,7 @@ jobs:
           node --version > qa-artifacts/node-version.txt
           node --check scripts/qa-extension.mjs
           node scripts/qa-extension.mjs --self-test-policy | tee qa-artifacts/policy-contracts.log
+          node scripts/qa-extension.mjs --self-test-identity | tee qa-artifacts/identity-contracts.log
 
       - name: Install headful test utilities on the disposable hosted runner
         run: |

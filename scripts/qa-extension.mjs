@@ -16,8 +16,8 @@ const REPOSITORY = 'Cyrilquesnel/onrush-food-cost';
 const options = new Map();
 for (let index = 2; index < process.argv.length; index++) {
   const key = process.argv[index];
-  assert.ok(['--validate-only', '--self-test-policy', '--chrome', '--output', '--expected-chrome-version'].includes(key), `Unknown option ${key}`);
-  options.set(key, ['--validate-only', '--self-test-policy'].includes(key) ? true : process.argv[++index]);
+  assert.ok(['--validate-only', '--self-test-policy', '--self-test-identity', '--chrome', '--output', '--expected-chrome-version'].includes(key), `Unknown option ${key}`);
+  options.set(key, ['--validate-only', '--self-test-policy', '--self-test-identity'].includes(key) ? true : process.argv[++index]);
 }
 const output = path.resolve(options.get('--output') || path.join(ROOT, 'qa-artifacts'));
 const report = { schema: 1, createdAt: new Date().toISOString(), repository: REPOSITORY,
@@ -177,6 +177,30 @@ async function policyContracts() {
   test('policy export: arrays/null cannot stand in for policy dictionaries', () => { for (const value of [[], null]) { const f = fixture(); f.policyGroups.chrome.policies = value; assert.throws(() => unmanagedPolicyExport(f)); } });
   test('policy export: missing or malformed precedence metadata is refused', () => { for (const value of [undefined, [], ['one'], ['one', 'two', 'three', '']]) { const f = fixture(); f.policyGroups.precedence.precedenceOrder = value; assert.throws(() => unmanagedPolicyExport(f)); } });
 }
+function exactReleaseWorker(candidate, expected) {
+  const manifest = candidate?.manifest;
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) return false;
+  let workerUrl;
+  try { workerUrl = new URL(candidate.workerUrl); } catch { return false; }
+  return workerUrl.protocol === 'chrome-extension:' && /^[a-p]{32}$/.test(workerUrl.hostname)
+    && candidate.id === workerUrl.hostname && workerUrl.pathname === '/' + expected.background.service_worker
+    && manifest.name === expected.name && manifest.version === expected.version
+    && manifest.manifest_version === expected.manifest_version
+    && manifest.background?.service_worker === expected.background.service_worker
+    && manifest.content_security_policy?.extension_pages === expected.content_security_policy.extension_pages;
+}
+async function identityContracts() {
+  const { test } = await import('node:test');
+  const expected = { name: 'Onrush — coût matière et food cost', version: '1.0.0', manifest_version: 3, background: { service_worker: 'background.js' }, content_security_policy: { extension_pages: "script-src 'self'; object-src 'self'" } };
+  const fixture = () => ({ id: 'a'.repeat(32), workerUrl: `chrome-extension://${'a'.repeat(32)}/background.js`, manifest: structuredClone(expected) });
+  test('worker identity: exact packaged identity is accepted', () => { assert.equal(exactReleaseWorker(fixture(), expected), true); });
+  test('worker identity: a Chrome component with version 1.0 is rejected', () => { const c = fixture(); c.manifest.name = 'Browser component'; c.manifest.version = '1.0'; assert.equal(exactReleaseWorker(c, expected), false); });
+  test('worker identity: getManifest version must preserve the exact ZIP version', () => { for (const version of ['1', '1.0', '1.0.0.0', '1.0.1', '1.1.0', '2.0.0', '', undefined]) { const c = fixture(); c.manifest.version = version; assert.equal(exactReleaseWorker(c, expected), false); } });
+  test('worker identity: another manifest name is rejected', () => { const c = fixture(); c.manifest.name += ' other'; assert.equal(exactReleaseWorker(c, expected), false); });
+  test('worker identity: altered CSP or manifest generation is rejected', () => { const c = fixture(); c.manifest.content_security_policy.extension_pages = "script-src 'self' 'unsafe-eval'"; assert.equal(exactReleaseWorker(c, expected), false); const old = fixture(); old.manifest.manifest_version = 2; assert.equal(exactReleaseWorker(old, expected), false); });
+  test('worker identity: wrong worker path or inconsistent extension ID is rejected', () => { const c = fixture(); c.workerUrl = `chrome-extension://${c.id}/other.js`; assert.equal(exactReleaseWorker(c, expected), false); const other = fixture(); other.id = 'b'.repeat(32); assert.equal(exactReleaseWorker(other, expected), false); });
+  test('worker identity: a missing manifest or a non-extension URL is rejected', () => { const c = fixture(); delete c.manifest; assert.equal(exactReleaseWorker(c, expected), false); const other = fixture(); other.workerUrl = 'https://example.invalid/background.js'; assert.equal(exactReleaseWorker(other, expected), false); });
+}
 async function screenshot(client, name) {
   const result = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   await writeFile(path.join(output, 'screenshots', name), Buffer.from(result.data, 'base64'));
@@ -245,9 +269,30 @@ try {
     const attach = async target => CDP.connect(target.webSocketDebuggerUrl);
     const targetForId = async id => until(async () => (await targets()).find(target => target.id === id), 'new DevTools target');
     await browser.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads, eventsEnabled: true });
-    const worker = await until(async () => (await targets()).find(target => target.type === 'service_worker' && /^chrome-extension:\/\/[a-p]{32}\/background\.js$/.test(target.url)), 'installed extension service worker');
+    const seenCandidates = new Map();
+    const worker = await until(async () => {
+      const matching = [];
+      for (const target of (await targets()).filter(target => target.type === 'service_worker' && /^chrome-extension:\/\/[a-p]{32}\/background\.js$/.test(target.url))) {
+        let candidateClient;
+        try {
+          candidateClient = await attach(target);
+          const observed = await candidateClient.evaluate('({id:chrome.runtime.id,manifest:chrome.runtime.getManifest()})');
+          const candidate = { ...observed, workerUrl: target.url };
+          const matchesRelease = exactReleaseWorker(candidate, zip.manifest);
+          seenCandidates.set(target.id, { targetId: target.id, extensionId: observed.id, workerUrl: target.url, name: observed.manifest.name, version: observed.manifest.version, manifestVersion: observed.manifest.manifest_version, serviceWorker: observed.manifest.background?.service_worker, csp: observed.manifest.content_security_policy?.extension_pages, matchesRelease });
+          if (matchesRelease) matching.push(target);
+        } catch (error) {
+          seenCandidates.set(target.id, { targetId: target.id, workerUrl: target.url, probeError: error.message, matchesRelease: false });
+        } finally { candidateClient?.close(); }
+      }
+      report.workerCandidates = [...seenCandidates.values()];
+      await json('extension-candidates.json', { expected: { name: zip.manifest.name, version: zip.manifest.version, manifestVersion: zip.manifest.manifest_version, serviceWorker: zip.manifest.background.service_worker, csp: zip.manifest.content_security_policy.extension_pages }, candidates: report.workerCandidates });
+      assert.ok(matching.length <= 1, 'Exactly one installed worker may match the release identity');
+      return matching[0];
+    }, 'service worker matching the exact packaged manifest identity');
     const workerClient = await attach(worker);
     const installed = await workerClient.evaluate('(async()=>({id:chrome.runtime.id,manifest:chrome.runtime.getManifest(),granted:await chrome.permissions.getAll()}))()');
+    assert.equal(exactReleaseWorker({ ...installed, workerUrl: worker.url }, zip.manifest), true, 'Selected worker identity must remain exact');
     assert.equal(installed.manifest.version, '1.0.0');
     assert.equal(installed.manifest.name, zip.manifest.name);
     assert.equal(installed.manifest.content_security_policy.extension_pages, zip.manifest.content_security_policy.extension_pages);
@@ -381,9 +426,11 @@ try {
   if (temporary) await rm(temporary, { recursive: true, force: true });
   report.completedAt = new Date().toISOString();
   await json('report.json', report);
+  console.log('QA_REPORT ' + JSON.stringify(report));
   console.log(JSON.stringify({ status: report.status, checks: report.checks.length, gaps: report.gaps, error: report.error || null }));
   if (report.status === 'incomplete') process.exitCode = 1;
 }
 }
 if (options.get('--self-test-policy')) await policyContracts();
+else if (options.get('--self-test-identity')) await identityContracts();
 else await main();
