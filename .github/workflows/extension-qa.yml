@@ -1,0 +1,167 @@
+name: Extension QA — isolated manual run
+
+# Deliberately manual. Do not add push, pull_request, schedule or workflow_run.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: extension-qa-manual
+  cancel-in-progress: false
+
+jobs:
+  extension-qa:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'Cyrilquesnel/onrush-food-cost' &&
+      github.event.repository.private == false
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    env:
+      EXTENSION_ZIP: docs/extension/onrush-food-cost-1.0.0.zip
+      EXTENSION_SHA256: c7d47ea4ea88861e3984857ce17b0b2328a3b89467d11e7727000831b4042c44
+      CFT_VERSION: 156.0.8078.73
+      CFT_METADATA_COMMIT: 939eaea0e99905046e3726508f41cb34167d7d2a
+      CFT_URL: https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.73/linux64/chrome-linux64.zip
+
+    steps:
+      - name: Check out this public repository without persisted credentials
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up the pinned Node 22 runtime
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: 22.23.4
+          package-manager-cache: false
+
+      - name: Verify runner, repository and exact extension archive
+        run: |
+          set -euo pipefail
+          mkdir -p qa-artifacts
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_OS" = Linux
+          test "$RUNNER_ARCH" = X64
+          test "$GITHUB_REPOSITORY" = Cyrilquesnel/onrush-food-cost
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+          repo = event.get('repository', {})
+          assert repo.get('full_name') == 'Cyrilquesnel/onrush-food-cost', 'Wrong repository'
+          assert repo.get('private') is False, 'Repository must be public'
+          PY
+          printf '%s  %s\n' "$EXTENSION_SHA256" "$EXTENSION_ZIP" | sha256sum --check --strict
+          sha256sum "$EXTENSION_ZIP" > qa-artifacts/extension-zip.sha256
+          git rev-parse HEAD > qa-artifacts/source-commit.txt
+          node --version > qa-artifacts/node-version.txt
+          node --check scripts/qa-extension.mjs
+          node scripts/qa-extension.mjs --self-test-policy | tee qa-artifacts/policy-contracts.log
+
+      - name: Install headful test utilities on the disposable hosted runner
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            xvfb xauth xdotool scrot dbus-daemon libnss3 libgbm1 libasound2 fonts-liberation
+
+      - name: Verify the fixed Chrome for Testing download against official metadata
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 \
+            --retry 2 --max-time 60 \
+            "https://raw.githubusercontent.com/GoogleChromeLabs/chrome-for-testing/$CFT_METADATA_COMMIT/data/known-good-versions-with-downloads.json" \
+            --output "$RUNNER_TEMP/cft-known-good.json"
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          raw = (Path(os.environ['RUNNER_TEMP']) / 'cft-known-good.json').read_bytes()
+          metadata = json.loads(raw)
+          entry = next(v for v in metadata['versions'] if v['version'] == os.environ['CFT_VERSION'])
+          download = next(v for v in entry['downloads']['chrome'] if v['platform'] == 'linux64')
+          assert download['url'] == os.environ['CFT_URL'], 'Unexpected download URL'
+          evidence = {
+            'version': entry['version'], 'revision': entry['revision'],
+            'platform': 'linux64', 'url': download['url'],
+            'metadataCommit': os.environ['CFT_METADATA_COMMIT'],
+            'metadataSha256': hashlib.sha256(raw).hexdigest(),
+            'archiveDigestTrust': 'SHA-256 will be measured on the runner; no publisher SHA-256 is provided in this metadata.'
+          }
+          Path('qa-artifacts/browser-source.json').write_text(json.dumps(evidence, indent=2) + '\n')
+          PY
+
+      - name: Download and extract the fixed official Chrome for Testing archive
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 \
+            --retry 2 --max-time 180 "$CFT_URL" --output "$RUNNER_TEMP/cft-chrome.zip"
+          python3 - <<'PY'
+          import hashlib, json, os, stat, zipfile
+          from pathlib import Path, PurePosixPath
+          archive = Path(os.environ['RUNNER_TEMP']) / 'cft-chrome.zip'
+          archive_hash = hashlib.sha256()
+          with archive.open('rb') as stream:
+              for block in iter(lambda: stream.read(1024 * 1024), b''):
+                  archive_hash.update(block)
+          digest = archive_hash.hexdigest()
+          Path('qa-artifacts/browser-archive.sha256').write_text(digest + '  chrome-linux64.zip\n')
+          evidence_path = Path('qa-artifacts/browser-source.json')
+          evidence = json.loads(evidence_path.read_text())
+          evidence['archiveSha256Observed'] = digest
+          evidence_path.write_text(json.dumps(evidence, indent=2) + '\n')
+          target = Path(os.environ['RUNNER_TEMP']) / 'cft'
+          target.mkdir()
+          with zipfile.ZipFile(archive) as package:
+            for entry in package.infolist():
+              name = PurePosixPath(entry.filename)
+              mode = entry.external_attr >> 16
+              assert not name.is_absolute() and '..' not in name.parts, 'Unsafe archive path'
+              assert name.parts and name.parts[0] == 'chrome-linux64', 'Unexpected archive root'
+              assert not stat.S_ISLNK(mode), 'Unexpected archive symlink'
+              extracted = Path(package.extract(entry, target))
+              if not entry.is_dir():
+                extracted.chmod((mode & 0o777) or 0o644)
+          executable = target / 'chrome-linux64' / 'chrome'
+          assert executable.is_file() and os.access(executable, os.X_OK), 'Chrome is not executable'
+          PY
+          "$RUNNER_TEMP/cft/chrome-linux64/chrome" --version > qa-artifacts/chrome-version.txt
+          grep --fixed-strings "$CFT_VERSION" qa-artifacts/chrome-version.txt
+          ldd "$RUNNER_TEMP/cft/chrome-linux64/chrome" > qa-artifacts/chrome-libraries.txt
+          if grep --fixed-strings 'not found' qa-artifacts/chrome-libraries.txt; then
+            exit 1
+          fi
+
+      - name: Qualify the exact extension ZIP in headful Chrome for Testing
+        run: |
+          set -euo pipefail
+          dbus-run-session -- xvfb-run -a --server-args='-screen 0 1440x1000x24' \
+            node scripts/qa-extension.mjs \
+              --chrome "$RUNNER_TEMP/cft/chrome-linux64/chrome" \
+              --expected-chrome-version "$CFT_VERSION" \
+              --output qa-artifacts \
+            2>&1 | tee qa-artifacts/qa-console.log
+          printf '%s  %s\n' "$EXTENSION_SHA256" "$EXTENSION_ZIP" | sha256sum --check --strict
+
+      - name: Preserve reports and screenshots even when qualification fails
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: extension-qa-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            qa-artifacts/*.json
+            qa-artifacts/*.png
+            qa-artifacts/*.csv
+            qa-artifacts/*.log
+            qa-artifacts/*.txt
+            qa-artifacts/*.sha256
+            qa-artifacts/screenshots/*.png
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 6

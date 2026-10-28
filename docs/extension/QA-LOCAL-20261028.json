@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "createdAt": "2026-10-28T06:40:47.238Z",
+  "repository": "Cyrilquesnel/onrush-food-cost",
+  "release": {
+    "version": "1.0.0",
+    "zip": "docs/extension/onrush-food-cost-1.0.0.zip",
+    "sha256": "c7d47ea4ea88861e3984857ce17b0b2328a3b89467d11e7727000831b4042c44"
+  },
+  "status": "static-validation-passed",
+  "checks": [
+    {
+      "name": "immutable-zip-sha256-crc-manifest",
+      "status": "passed",
+      "entries": 18,
+      "sha256": "c7d47ea4ea88861e3984857ce17b0b2328a3b89467d11e7727000831b4042c44"
+    }
+  ],
+  "gaps": [
+    "Browser installation, native action, runtime CSP, download and offline reload have not run."
+  ],
+  "notes": [
+    "No Chrome Web Store submission or signed CRX installation is tested."
+  ],
+  "completedAt": "2026-10-28T06:40:47.262Z",
+  "validationContext": {
+    "baseCommit": "e27617ffdc740eae89e2301d08af8153de6fe9eb",
+    "localNode": "v24.19.0",
+    "expectedRunnerNode": "22.23.4",
+    "repositoryPublicVerifiedVia": "GET https://api.github.com/repos/Cyrilquesnel/onrush-food-cost : private=false, visibility=public",
+    "browserExecutionPerformed": false,
+    "remotePushPerformed": false,
+    "workflowDispatched": false
+  },
+  "existingTests": {
+    "command": "node --test test/*.test.js",
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0
+  },
+  "policyGuardContracts": {
+    "command": "node scripts/qa-extension.mjs --self-test-policy",
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0,
+    "schema": "Chrome156 Linux policyGroups.chrome/precedence/extensions, explicit empty policy dictionaries"
+  },
+  "changedUiScenarios": {
+    "online": {
+      "portions": 2,
+      "portionCost": "3,75 €",
+      "foodCost": "37,5 %",
+      "margin": "6,25 €",
+      "csvPortion": "3,750000"
+    },
+    "afterOfflineReload": {
+      "portions": 6,
+      "portionCost": "1,25 €",
+      "foodCost": "12,5 %",
+      "margin": "8,75 €",
+      "csvPortion": "1,250000"
+    },
+    "status": "prepared, not browser-executed"
+  },
+  "staticWorkflowValidation": {
+    "manualTriggerOnly": true,
+    "contentsReadOnly": true,
+    "officialActionsPinned": true,
+    "bashSyntaxPassed": true,
+    "python310SyntaxPassed": true
+  },
+  "archive": {
+    "sha256": "c7d47ea4ea88861e3984857ce17b0b2328a3b89467d11e7727000831b4042c44",
+    "bytes": 108559,
+    "entries": 18,
+    "manifestVersion": 3,
+    "version": "1.0.0",
+    "apiPermissionsDeclared": false,
+    "hostPermissionsDeclared": false
+  },
+  "preparedFiles": [
+    {
+      "path": "scripts/qa-extension.mjs",
+      "sha256": "20b1332ec012090cdc9f5afd971370f97e6a81c4561c10dfbdd993b4bdc3c28b"
+    },
+    {
+      "path": ".github/workflows/extension-qa.yml",
+      "sha256": "eb7ff672d3754825bc3d52d6fff96ad8c602219d27a54c8df36852f34814c424"
+    },
+    {
+      "path": "docs/extension/QA-ISOLATED.md",
+      "sha256": "e13f14b6c1b2b68460cf11ae3a5930e25b92ff42d8c6620f57b412e5cb8b7aa4"
+    }
+  ]
+}
