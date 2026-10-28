@@ -4,7 +4,9 @@ Calculez le coût matière par portion, le food cost et la marge matière d'une 
 
 [Télécharger le ZIP 1.0.0](https://cyrilquesnel.github.io/onrush-food-cost/extension/onrush-food-cost-1.0.0.zip) · [Utiliser le calculateur Web](https://cyrilquesnel.github.io/onrush-food-cost/) · [Confidentialité](https://cyrilquesnel.github.io/onrush-food-cost/privacy.html)
 
-Cette archive 1.0.0 a été préparée le 27 octobre 2026 et est conservée sans modification. Ce paquet est fourni pour **chargement manuel sur Chrome, sur ordinateur**. Il n'est pas publié sur le Chrome Web Store. L'installation réelle de l'extension reste à vérifier sur un navigateur autorisé ; les contrôles du calculateur ne remplacent pas cette vérification.
+Cette archive 1.0.0 a été préparée le 27 octobre 2026 et est conservée sans modification. Son chargement décompressé et son parcours réel ont été **qualifiés le 28 octobre 2026 dans Chrome for Testing 156.0.8078.73, sous Linux x64, avec un profil temporaire isolé : 11 contrôles réussis, aucun écart**. [Preuve JSON conservée](qa-20261028.json) · [Exécution GitHub Actions](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40653029353) · [Périmètre et historique](QA-ISOLATED.md).
+
+La recette a validé l'ouverture d'un nouvel onglet par l'action native au clavier X11, les calculs, les deux téléchargements CSV, le vrai rechargement hors ligne, la CSP et l'absence de permissions ou de politiques configurées. Le paquet est fourni pour **chargement manuel sur un ordinateur autorisé**. Il n'est pas publié sur le Chrome Web Store et n'est pas un CRX signé ; cette recette ne qualifie pas Chrome sur votre Mac ni une installation sur iPhone.
 
 ## Installation sur un ordinateur autorisé
 
@@ -20,7 +22,7 @@ Si le chargement est interdit par une politique administrée, utilisez le [calcu
 
 Avec cet **exemple fictif**, saisissez un ingrédient à **10 € HT/kg**, **600 g nets**, un rendement de **80 %**, **3 portions** et une vente de **10 € HT par portion**. Résultats attendus : **7,50 € par recette**, **2,50 € par portion**, **25 % de food cost** et **7,50 € de marge matière par portion**. Cette marge n'inclut pas le personnel, le loyer ni les autres charges.
 
-Vérifiez ensuite l'export CSV et, après export si nécessaire, le rechargement de l'onglet d'extension sans réseau. Un rechargement peut effacer les saisies. Ces vérifications sont à réaliser sur votre installation ; leur réussite n'est pas annoncée ici.
+Vérifiez ensuite l'export CSV et, après export si nécessaire, le rechargement de l'onglet d'extension sans réseau. Le rechargement réinitialise les saisies avec l'exemple fictif. La [recette isolée](qa-20261028.json) a également vérifié un recalcul à deux portions en ligne (**3,75 € et 37,5 %**) puis à six portions après rechargement hors ligne (**1,25 € et 12,5 %**), avec un CSV réel pour chaque résultat. Ces constats concernent l'environnement de recette ; vérifiez le parcours sur votre installation.
 
 ## Version et intégrité
 

@@ -1,0 +1,237 @@
+{
+  "run_id": 40653029353,
+  "run_url": "https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40653029353",
+  "source_commit": "538e18db5921bedf7cf0707d5e839f69b3e1adcd",
+  "job_id": 122697365003,
+  "job_conclusion": "success",
+  "artifact_id": 12799654747,
+  "artifact_digest": "sha256:f5777937e3c791f8e854e5c0a434043a00b4eaaf5094cb081bfba927196f8a22",
+  "artifact_expires_at": "2026-11-04T07:54:32Z",
+  "source": "Native GitHub Actions QA_REPORT; retained independently of expiring binary artifact",
+  "scope": "Exact 1.0.0 ZIP unpacked in headful Chrome for Testing156/Linux x64, isolated temporary profile. No Store submission, signed CRX or user Mac/iPhone qualification.",
+  "report": {
+    "schema": 1,
+    "createdAt": "2026-10-28T07:54:22.096Z",
+    "repository": "Cyrilquesnel/onrush-food-cost",
+    "release": {
+      "version": "1.0.0",
+      "zip": "docs/extension/onrush-food-cost-1.0.0.zip",
+      "sha256": "c7d47ea4ea88861e3984857ce17b0b2328a3b89467d11e7727000831b4042c44"
+    },
+    "status": "passed",
+    "checks": [
+      {
+        "name": "immutable-zip-sha256-crc-manifest",
+        "status": "passed",
+        "entries": 18,
+        "sha256": "c7d47ea4ea88861e3984857ce17b0b2328a3b89467d11e7727000831b4042c44"
+      },
+      {
+        "name": "real-unpacked-installation-service-worker-target",
+        "status": "passed",
+        "extension": {
+          "id": "idlklofmdfakjjmhbladgeldcknbbdpn",
+          "workerUrl": "chrome-extension://idlklofmdfakjjmhbladgeldcknbbdpn/background.js",
+          "version": "1.0.0",
+          "name": "Onrush — coût matière et food cost",
+          "grantedPermissions": {
+            "origins": [],
+            "permissions": []
+          }
+        }
+      },
+      {
+        "name": "runtime-browser-policy-export-empty",
+        "status": "passed"
+      },
+      {
+        "name": "toolbar-pin-ui-setup-only",
+        "status": "passed",
+        "extensionId": "idlklofmdfakjjmhbladgeldcknbbdpn",
+        "before": {
+          "id": "idlklofmdfakjjmhbladgeldcknbbdpn",
+          "checked": false,
+          "pinnedToToolbar": false
+        },
+        "after": {
+          "id": "idlklofmdfakjjmhbladgeldcknbbdpn",
+          "checked": true,
+          "pinnedToToolbar": true
+        },
+        "actionActivated": false
+      },
+      {
+        "name": "native-browser-action-opens-extension-owned-tab",
+        "status": "passed",
+        "targetUrl": "chrome-extension://idlklofmdfakjjmhbladgeldcknbbdpn/index.html",
+        "newTargetId": "13500B358B841A26CCAFE2052F80B7F9",
+        "activation": "X11 toolbar keyboard after UI pin setup"
+      },
+      {
+        "name": "installed-extension-ui-known-calculation-comma-and-dot",
+        "status": "passed",
+        "url": "chrome-extension://idlklofmdfakjjmhbladgeldcknbbdpn/index.html",
+        "portion": "3,75 €",
+        "total": "7,50 € HT",
+        "foodCost": "37,5 %",
+        "margin": "6,25 €",
+        "source": "chrome_extension",
+        "error": false
+      },
+      {
+        "name": "real-csv-download-numeric-values-and-formula-protection",
+        "status": "passed",
+        "filename": "calcul-food-cost-onrush.csv",
+        "archivedAs": "export.csv",
+        "temporaryDownloadRemoved": true,
+        "bytes": 1010,
+        "sha256": "6f22cfe4763ac73cfe7a175251d3fc8529e2caccabecc07dfbac9229950ad0ee"
+      },
+      {
+        "name": "offline-hard-reload-and-changed-recalculation",
+        "status": "passed",
+        "cacheDisabled": true,
+        "ignoreCache": true,
+        "networkOffline": true,
+        "reloadedSeed": {
+          "url": "chrome-extension://idlklofmdfakjjmhbladgeldcknbbdpn/index.html",
+          "online": false,
+          "navigationType": "reload",
+          "portion": "2,50 €",
+          "foodCost": "25,0 %"
+        },
+        "recalculated": {
+          "portion": "1,25 €",
+          "foodCost": "12,5 %",
+          "margin": "8,75 €",
+          "hidden": false
+        }
+      },
+      {
+        "name": "real-offline-csv-download-reflects-changed-calculation",
+        "status": "passed",
+        "filename": "calcul-food-cost-onrush.csv",
+        "bytes": 1060,
+        "sha256": "64dce70517df77ba9ab89fabf8b61ee6b0b19336b282bc058c51bfc9f25f9146"
+      },
+      {
+        "name": "no-calculator-http-requests-or-runtime-exceptions",
+        "status": "passed"
+      },
+      {
+        "name": "runtime-extension-csp-blocks-inline-script",
+        "status": "passed",
+        "inlineExecuted": false,
+        "violations": [
+          {
+            "directive": "script-src-elem",
+            "blockedURI": "inline"
+          },
+          {
+            "directive": "script-src-elem",
+            "blockedURI": "inline"
+          }
+        ]
+      }
+    ],
+    "gaps": [],
+    "notes": [
+      "No Chrome Web Store submission or signed CRX installation is tested."
+    ],
+    "stage": "runtime-csp",
+    "browser": {
+      "versionText": "Google Chrome for Testing 156.0.8078.73",
+      "executableSha256": "8ea0ecbfc1ac0dc0e957de722babf9b72f8e86cb8643308ff17a491d59bdaa80",
+      "temporaryProfile": true,
+      "flags": [
+        "headful",
+        "fresh-profile",
+        "loopback-debugger",
+        "exact-unpacked-zip",
+        "sandbox-default"
+      ]
+    },
+    "workerCandidates": [
+      {
+        "targetId": "6CF76B18A8C7DEAEB4976933834A01F2",
+        "extensionId": "glbjnfimcajjenihimblfaponejbkoph",
+        "workerUrl": "chrome-extension://glbjnfimcajjenihimblfaponejbkoph/background.js",
+        "name": "Contextual Tasks",
+        "version": "1.0",
+        "manifestVersion": 3,
+        "serviceWorker": "background.js",
+        "csp": "script-src 'self' chrome://resources; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;",
+        "matchesRelease": false
+      },
+      {
+        "targetId": "D7B1D53A4B8C131750B3A19BBF0C184B",
+        "extensionId": "idlklofmdfakjjmhbladgeldcknbbdpn",
+        "workerUrl": "chrome-extension://idlklofmdfakjjmhbladgeldcknbbdpn/background.js",
+        "name": "Onrush — coût matière et food cost",
+        "version": "1.0.0",
+        "manifestVersion": 3,
+        "serviceWorker": "background.js",
+        "csp": "script-src 'self'; object-src 'self'",
+        "matchesRelease": true
+      }
+    ],
+    "extension": {
+      "id": "idlklofmdfakjjmhbladgeldcknbbdpn",
+      "workerUrl": "chrome-extension://idlklofmdfakjjmhbladgeldcknbbdpn/background.js",
+      "version": "1.0.0",
+      "name": "Onrush — coût matière et food cost",
+      "grantedPermissions": {
+        "origins": [],
+        "permissions": []
+      }
+    },
+    "diagnostics": [
+      {
+        "stage": "policy-created",
+        "file": "diagnostic-policy-created.json",
+        "screenshot": "screenshots/diagnostic-policy-created.png",
+        "controlCount": 0,
+        "uniqueShadowPathCount": 0,
+        "skippedPolicyTrees": 0,
+        "truncated": false
+      },
+      {
+        "stage": "policy-menu-open",
+        "file": "diagnostic-policy-menu-open.json",
+        "screenshot": "screenshots/diagnostic-policy-menu-open.png",
+        "controlCount": 8,
+        "uniqueShadowPathCount": 12,
+        "skippedPolicyTrees": 3,
+        "truncated": false
+      },
+      {
+        "stage": "toolbar-pin-before",
+        "file": "diagnostic-toolbar-pin-before.json",
+        "screenshot": "screenshots/diagnostic-toolbar-pin-before.png",
+        "controlCount": 18,
+        "uniqueShadowPathCount": 30,
+        "skippedPolicyTrees": 0,
+        "truncated": true
+      },
+      {
+        "stage": "toolbar-pin-after",
+        "file": "diagnostic-toolbar-pin-after.json",
+        "screenshot": "screenshots/diagnostic-toolbar-pin-after.png",
+        "controlCount": 18,
+        "uniqueShadowPathCount": 30,
+        "skippedPolicyTrees": 0,
+        "truncated": true
+      },
+      {
+        "stage": "finally-runtime-csp",
+        "file": "diagnostic-finally-runtime-csp.json",
+        "screenshot": "screenshots/diagnostic-finally-runtime-csp.png",
+        "controlCount": 23,
+        "uniqueShadowPathCount": 0,
+        "skippedPolicyTrees": 0,
+        "truncated": false
+      }
+    ],
+    "completedAt": "2026-10-28T07:54:31.909Z"
+  }
+}

@@ -1,8 +1,28 @@
 # Qualification isolée de l’extension Chrome
 
-Statut à la préparation : **workflow écrit, aucune exécution ni installation réussie revendiquée**. La qualification effective doit être établie par un rapport et les captures d’une exécution identifiée. La préparation de ce document ne modifie pas le ZIP distribué.
+**Qualification réussie le 28 octobre 2026 à 07:54:31 UTC : onze contrôles réussis, aucun écart.** Le [run 40653029353](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40653029353) a chargé les fichiers extraits du ZIP 1.0.0 exact dans Chrome for Testing 156.0.8078.73, Linux x64, en mode graphique et avec un profil temporaire isolé. La [preuve JSON conservée](qa-20261028.json) reprend le rapport natif complet du job `122697365003`, au commit source `538e18db5921bedf7cf0707d5e839f69b3e1adcd`.
 
-Le workflow doit rester non déclenché jusqu’au feu vert du coordinateur et à la revue indépendante ASTRA du script et du workflow. Ce point décrit l’état convenu de cette préparation ; il ne demande pas une nouvelle autorisation de construction du calculateur.
+Les quatre échecs précédents du script de recette et leurs correctifs sont conservés ci-dessous. [QA-LOCAL-20261028.json](QA-LOCAL-20261028.json) reste la preuve statique historique de préparation ; elle ne remplace pas le relevé de l’exécution réussie. Le ZIP distribué est resté inchangé.
+
+## Résultats de l’exécution réussie
+
+| Contrôle | Constat réel |
+| --- | --- |
+| Intégrité de l’archive | SHA-256 attendu et CRC des 18 fichiers vérifiés |
+| Installation | Worker Onrush identifié, Manifest V3 et version exacte 1.0.0 ; permissions API et hôtes vides |
+| Politiques | Export réel de `chrome://policy`, quatre groupes attendus validés sans politique configurée |
+| Préparation de la barre d’outils | Épinglage confirmé par l’UI ; ce réglage est distinct de l’activation |
+| Action native | Clavier X11, puis nouvel ID d’onglet à l’URL exacte du calculateur ; aucun repli direct utilisé |
+| Calcul en ligne | Deux portions : 3,75 € par portion, 37,5 % de food cost, 6,25 € de marge matière |
+| Premier CSV | Téléchargement réel de 1 010 octets ; montants vérifiés et champs texte protégés contre les formules |
+| Rechargement hors ligne | Cache désactivé, `navigator.onLine=false`, vrai reload puis six portions : 1,25 €, 12,5 %, 8,75 € |
+| Second CSV | Téléchargement réel hors ligne de 1 060 octets, avec les nouveaux montants |
+| Réseau et exceptions | Aucune requête HTTP(S) du calculateur ni exception runtime observée durant le parcours surveillé |
+| CSP | Script inline effectivement bloqué par la politique de l’extension |
+
+Les identifiants, résultats et empreintes complets des CSV figurent dans la [preuve JSON](qa-20261028.json). L’artefact GitHub `12799654747`, digest `sha256:f5777937e3c791f8e854e5c0a434043a00b4eaaf5094cb081bfba927196f8a22`, contient les captures et fichiers de recette ; son expiration est annoncée au **4 novembre 2026 à 07:54:32 UTC**. Le rapport JSON conservé dans ce dépôt reste consultable indépendamment de cet artefact temporaire.
+
+Cette qualification porte sur le ZIP **décompressé** dans cet environnement CfT Linux. Elle ne constitue ni une publication Chrome Web Store, ni la qualification d’un CRX signé, de Chrome sur le Mac d’un utilisateur ou d’une installation sur iPhone.
 
 ## Objet exact et isolation
 
@@ -28,7 +48,7 @@ Le workflow retrouve cette version dans les métadonnées Google figées et exig
 
 **Limite d’authentification :** les métadonnées officielles observées ne fournissent pas de SHA-256 de l’archive Chrome. Le digest enregistré après téléchargement est donc une mesure de l’archive reçue, pas une signature ni une comparaison à une empreinte indépendante publiée par Google. Aucune empreinte de confiance n’est inventée. La version et l’URL sont épinglées ; l’identité binaire indépendante ne l’est pas. Si un changement de version est nécessaire, renouveler la vérification de provenance et la revue.
 
-Le téléchargement Chrome n’a pas été effectué depuis l’environnement cloud de préparation : son domaine est hors de la liste réseau autorisée de cet environnement. Aucun proxy, miroir ou réglage de politique n’a été modifié pour contourner cette limite. Le téléchargement fait partie du futur run GitHub hébergé.
+Le téléchargement Chrome n’a pas été effectué depuis l’environnement cloud de préparation : son domaine est hors de la liste réseau autorisée de cet environnement. Aucun proxy, miroir ou réglage de politique n’a été modifié pour contourner cette limite. Le navigateur officiel a été téléchargé sur le runner GitHub hébergé de la recette.
 
 ### Actions officielles épinglées
 
@@ -66,7 +86,7 @@ Il s’agit du navigateur Chrome for Testing complet en mode graphique sous Xvfb
 
 Le workflow ne désactive pas le sandbox, AppArmor ou les politiques administrées. Il ne modifie pas une politique locale pour permettre une installation interdite. Si la configuration standard du runner empêche le lancement ou le chargement, conserver l’échec et les traces ; ne pas transformer ce refus en réussite à l’aide d’un contournement.
 
-## Preuves requises et écarts à garder ouverts
+## Contrôles du parcours
 
 La présence d’un onglet ouvert directement sur `chrome-extension://…/index.html`, ou le passage des seuls tests du moteur, ne démontre pas que l’action native de l’extension a été déclenchée.
 
@@ -79,7 +99,7 @@ Pour fermer la qualification, le rapport doit distinguer et prouver :
 5. **Hors ligne avec nouveau résultat** : le test applique le mode réseau hors ligne à la session DevTools de la page, désactive son cache et recharge effectivement l’onglet. Il attend un nouvel événement de chargement, `navigator.onLine=false` et le retour de l’exemple initial à 2,50 €. Il remplace ensuite les portions par **six**, exige l’invalidation du résultat, soumet et vérifie **1,25 € par portion, 12,5 % de food cost et 8,75 € de marge matière**, ainsi que ces valeurs à six décimales dans le second CSV. La coupure est testée dans ce contexte de page, pas revendiquée pour toute la machine.
 6. **Erreurs et permissions** : erreurs JavaScript/CSP consignées, permissions effectives cohérentes avec le manifest, absence d’accès non prévu à des onglets ou sites.
 
-À la préparation, **ces six points restent à démontrer par le run**. Si le script ne couvre pas l’action native ou le rechargement hors ligne réel, ces écarts restent ouverts, même si les autres assertions réussissent. Un échec conserve le statut échec ; il n’est pas résumé comme une extension installée et fonctionnelle.
+Ces points ont été validés par les onze contrôles du [run réussi](qa-20261028.json), avec `gaps: []`. Lors d’une nouvelle recette, une action native ou un rechargement hors ligne non démontré reste un écart, même si les autres assertions réussissent. Les échecs historiques ci-dessous conservent leur statut d’échec.
 
 ### Contrat strict de l’export des politiques Chrome 156 Linux
 
@@ -103,7 +123,7 @@ Le [premier run manuel 40647831798](https://github.com/Cyrilquesnel/onrush-food-
 
 La [documentation des versions](https://developer.chrome.com/docs/extensions/reference/manifest/version) considère les composantes absentes comme zéro pour comparer des versions. Cela ne permet pas de remplacer l’assertion exacte sur `getManifest()` : la [documentation runtime](https://developer.chrome.com/docs/extensions/reference/api/runtime#getManifest) décrit la sérialisation du manifest complet, confirmée par [HandleGetManifest dans Chromium 156](https://github.com/chromium/chromium/blob/156.0.8078.73/extensions/renderer/api/runtime_hooks_delegate.cc#L481) et son [test de fidélité du manifest](https://github.com/chromium/chromium/blob/156.0.8078.73/extensions/renderer/api/runtime_hooks_delegate_unittest.cc#L174). Aucune normalisation de `1.0.0` vers `1.0` n’est donc revendiquée.
 
-Le correctif sonde les workers candidats et conserve leur ID, URL, nom, version, type de manifest et CSP **avant** sélection dans `extension-candidates.json`. Il n’accepte que le nom, la version exacte `1.0.0`, Manifest V3, le worker et la CSP du ZIP validé, avec un ID cohérent avec l’URL. Les assertions strictes après sélection et les contrôles suivants restent en place. Les métadonnées du premier run n’identifient pas le worker interrogé ; l’hypothèse d’un composant Chrome sélectionné à tort ne sera confirmée que par les traces d’une nouvelle exécution.
+Le correctif sonde les workers candidats et conserve leur ID, URL, nom, version, type de manifest et CSP **avant** sélection dans `extension-candidates.json`. Il n’accepte que le nom, la version exacte `1.0.0`, Manifest V3, le worker et la CSP du ZIP validé, avec un ID cohérent avec l’URL. Les assertions strictes après sélection et les contrôles suivants restent en place. Les métadonnées du premier run n’identifient pas le worker interrogé ; les exécutions suivantes ont distingué le composant Chrome `Contextual Tasks` version `1.0` et le worker Onrush version `1.0.0`.
 
 Sept contrats ciblés refusent les composants, versions différentes, noms/CSP modifiés, anciens manifests, mauvais chemins et IDs incohérents :
 
@@ -111,13 +131,13 @@ Sept contrats ciblés refusent les composants, versions différentes, noms/CSP m
 node scripts/qa-extension.mjs --self-test-identity
 ```
 
-Le [deuxième run 40649755650](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40649755650), au commit `9784672e7af8160ef3d3fbe2c347c8fff3104c6d`, a confirmé la sélection de l’extension Onrush `1.0.0` et ses permissions API/hôtes vides. Le composant Chrome `ContextualTasks` version `1.0` a été distingué et refusé. Le run a ensuite échoué sur le sélecteur du bouton d’export des politiques ; l’artefact porte l’ID `12798897864`. L’action native, les calculs et les contrôles suivants n’ont pas encore été exécutés avec succès.
+Le [deuxième run 40649755650](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40649755650), au commit `9784672e7af8160ef3d3fbe2c347c8fff3104c6d`, a confirmé la sélection de l’extension Onrush `1.0.0` et ses permissions API/hôtes vides. Le composant Chrome `Contextual Tasks` version `1.0` a été distingué et refusé. Le run a ensuite échoué sur le sélecteur du bouton d’export des politiques ; l’artefact porte l’ID `12798897864`. L’action native, les calculs et les contrôles suivants n’avaient pas été exécutés avec succès dans ce run.
 
 Dans [le template exact Chrome 156](https://github.com/chromium/chromium/blob/156.0.8078.73/components/policy/resources/webui/policy_app.html.ts#L26), `cr-button#more-actions-button` et `cr-action-menu#actionMenu` sont dans **`policy-app.shadowRoot`**. Le bouton `button#export-policies` est un enfant du menu, initialement fermé. Le correctif attend la définition et le rendu du composant, ouvre ce menu via un événement souris, exige `menu.open` et un bouton visible, puis déclenche le téléchargement réel. Les [handlers d’ouverture et d’export](https://github.com/chromium/chromium/blob/156.0.8078.73/components/policy/resources/webui/policy_app.ts#L217) confirment ce chemin. La validation du fichier `policyGroups` reste inchangée et stricte.
 
 Avant l’attente du DOM et à l’ouverture du menu, des diagnostics enregistrent les tags, IDs, rôles et chemins de shadow DOM, ainsi qu’une capture. Le bloc `finally` tente également un diagnostic de la page active et une capture native pour toute étape atteinte, même après une exception. Les valeurs des champs de saisie et les valeurs de politiques ne sont pas sérialisées dans ces diagnostics. Une erreur de diagnostic est consignée sans remplacer l’échec du contrôle initial. Le nom machine du contrôle d’installation est conservé, les métadonnées de l’extension étant rangées sous `extension`.
 
-Le [troisième run 40650655161](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40650655161), au commit `b15ec73b682121a7a2362b81ff03335a5ee22751`, a réellement exporté les politiques, puis a refusé le groupe officiel `extensionInstall` que le garde précédent ne connaissait pas. L’installation authentique, la version et les permissions avaient réussi ; les contrôles suivants restent à exécuter. L’artefact `12798879153` porte le digest `37c3bb08f43aecd7b1afa3b965335afc27fc7dfacec800383a84a79a0b337dce`.
+Le [troisième run 40650655161](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40650655161), au commit `b15ec73b682121a7a2362b81ff03335a5ee22751`, a réellement exporté les politiques, puis a refusé le groupe officiel `extensionInstall` que le garde précédent ne connaissait pas. L’installation authentique, la version et les permissions avaient réussi ; les contrôles suivants n’avaient pas été exécutés dans ce run. L’artefact `12798879153` porte le digest `37c3bb08f43aecd7b1afa3b965335afc27fc7dfacec800383a84a79a0b337dce`.
 
 Les diagnostics ignorent entièrement `policy-table` et `policy-row`, sans parcourir leurs descendants ni leurs shadow roots. Chaque instantané est limité à **30 chemins de shadow DOM uniques, 40 contrôles, 500 éléments visités et 20 niveaux**. Les détails bornés restent dans les fichiers de diagnostic ; le rapport principal et la console conservent uniquement leurs compteurs, références et erreurs, ainsi que les contrôles et résultats fonctionnels complets.
 
@@ -137,4 +157,4 @@ Le script écrit aussi une ligne `QA_REPORT ` suivie du rapport JSON dans le jou
 
 L’upload s’exécute aussi après un échec afin de préserver la preuve disponible. L’absence de rapport exploitable ou de fichier de preuve n’est pas un succès implicite. Relever l’URL du run, sa tentative, le commit qualifié et les constats vérifiables avant de mettre à jour le statut public de l’extension.
 
-Un passage réussi démontrerait le fonctionnement de ce ZIP dans cet environnement CfT Linux isolé. Il ne démontrerait pas une installation sur le poste d’un utilisateur, la compatibilité de tous les navigateurs Chrome, une validation Chrome Web Store ou une possibilité de contourner une politique d’entreprise. Aucun de ces états n’est revendiqué ici.
+Le run réussi démontre le fonctionnement de ce ZIP décompressé dans l’environnement CfT Linux isolé décrit ici. Il ne qualifie pas un CRX signé, une installation sur le Mac d’un utilisateur ou un iPhone, tous les navigateurs Chrome, ni une validation Chrome Web Store. Aucune politique d’entreprise n’a été contournée.

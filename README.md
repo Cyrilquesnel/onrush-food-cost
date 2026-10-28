@@ -4,6 +4,8 @@ Démonstration pédagogique : https://cyrilquesnel.github.io/onrush-food-cost/
 
 Extension Chrome 1.0.0 : [télécharger le ZIP](https://cyrilquesnel.github.io/onrush-food-cost/extension/onrush-food-cost-1.0.0.zip) · [notice de chargement manuel sur ordinateur autorisé](docs/extension/README.md). Paquet autonome, non publié sur le Chrome Web Store.
 
+Le ZIP décompressé a passé [onze contrôles réels dans Chrome for Testing 156 sous Linux, avec un profil isolé](docs/extension/QA-ISOLATED.md) : action native, calculs, CSV et rechargement hors ligne. [Preuve JSON conservée](docs/extension/qa-20261028.json).
+
 Figures pédagogiques : [six exemples illustrés sur les coûts et leurs unités](docs/visuels-linkedin/README.md).
 
 Outil pédagogique libre pour calculer le coût matière d’une recette, le coût par portion, le food cost et la marge matière. Il fonctionne sans compte, sans API et sans connexion au SaaS Onrush. Les calculs et l’export CSV sont effectués dans le navigateur.
