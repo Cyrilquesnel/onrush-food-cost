@@ -205,6 +205,38 @@ async function screenshot(client, name) {
   const result = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   await writeFile(path.join(output, 'screenshots', name), Buffer.from(result.data, 'base64'));
 }
+async function diagnostics(client, stage) {
+  const name = stage.replace(/[^a-z0-9-]/gi, '-');
+  const evidence = { stage, at: new Date().toISOString(), inputValuesRecorded: false };
+  try {
+    evidence.dom = await client.evaluate(`(() => {
+      const controls=[], shadowHosts=[];
+      const visit=(root,chain=[])=>{ for(const node of root.querySelectorAll('*')) {
+        if(controls.length<250 && node.matches('button,cr-button,cr-icon-button,a,input,select,[role="button"],[role="dialog"]')) {
+          const r=node.getBoundingClientRect(); controls.push({tag:node.localName,id:node.id,role:node.getAttribute('role'),label:node.getAttribute('aria-label'),buttonText:node.matches('button')?node.textContent.trim().slice(0,100):undefined,disabled:Boolean(node.disabled),visible:r.width>0&&r.height>0,shadowChain:chain});
+        }
+        if(node.shadowRoot){ const host=node.localName+(node.id?'#'+node.id:'');shadowHosts.push([...chain,host]);visit(node.shadowRoot,[...chain,host]); }
+      }};
+      visit(document);return {url:location.href,title:document.title,readyState:document.readyState,shadowHosts,controls};
+    })()`);
+  } catch (error) { evidence.domError = error.message; }
+  try { await screenshot(client, `diagnostic-${name}.png`); evidence.screenshot = `screenshots/diagnostic-${name}.png`; }
+  catch (error) { evidence.screenshotError = error.message; }
+  await json(`diagnostic-${name}.json`, evidence);
+  (report.diagnostics ||= []).push(evidence);
+}
+async function clickPolicyControl(client, id) {
+  assert.ok(['more-actions-button', 'export-policies'].includes(id), 'Only source-verified policy controls may be clicked');
+  const point = await client.evaluate(`(() => {
+    const root=document.querySelector('policy-app')?.shadowRoot;
+    const element=${id === 'more-actions-button' ? "root?.querySelector('cr-button#more-actions-button')" : "root?.querySelector('cr-action-menu#actionMenu')?.querySelector('button#export-policies')"};
+    if(!element)throw Error('Missing exact Chrome policy control');
+    const r=element.getBoundingClientRect();if(!(r.width>0&&r.height>0))throw Error('Chrome policy control is not visible');
+    return {x:r.x+r.width/2,y:r.y+r.height/2};
+  })()`);
+  await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
+  await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...point });
+}
 async function click(client, selector) {
   const point = await client.evaluate(`(() => { const element = document.querySelector(${JSON.stringify(selector)}); if (!element) throw Error('Missing control'); element.scrollIntoView({block:'center'}); const r=element.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
   await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
@@ -223,11 +255,13 @@ function csvRows(text) {
   return rows;
 }
 
-let browserProcess, temporary, browser, page, browserLog = '';
+let browserProcess, temporary, browser, page, activeClient, getTargets, browserLog = '';
+const stage = name => { report.stage = name; };
 async function main() {
 await mkdir(output, { recursive: true });
 await mkdir(path.join(output, 'screenshots'), { recursive: true });
 try {
+  stage('preflight');
   if (process.env.GITHUB_ACTIONS) {
     assert.equal(process.env.GITHUB_REPOSITORY, REPOSITORY);
     assert.equal(process.env.GITHUB_EVENT_NAME, 'workflow_dispatch');
@@ -255,6 +289,7 @@ try {
     assert.ok(versionText.endsWith(options.get('--expected-chrome-version')), 'Pinned Chrome version must match');
     report.browser = { versionText, executableSha256: createHash('sha256').update(await readFile(executable)).digest('hex'), temporaryProfile: true, flags: ['headful', 'fresh-profile', 'loopback-debugger', 'exact-unpacked-zip', 'sandbox-default'] };
     const args = [`--user-data-dir=${profile}`, '--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--lang=en-US', '--window-size=1440,1000', `--load-extension=${extension}`, `--disable-extensions-except=${extension}`, 'about:blank'];
+    stage('browser-launch');
     browserProcess = spawn(executable, args, { stdio: ['ignore', 'ignore', 'pipe'] });
     browserProcess.stderr.on('data', chunk => { browserLog += chunk.toString(); });
     const portText = await until(async () => {
@@ -266,10 +301,12 @@ try {
     const origin = `http://127.0.0.1:${port}`;
     browser = await CDP.connect(`ws://127.0.0.1:${port}${browserPath}`);
     const targets = async () => (await fetch(origin + '/json/list')).json();
+    getTargets = targets;
     const attach = async target => CDP.connect(target.webSocketDebuggerUrl);
     const targetForId = async id => until(async () => (await targets()).find(target => target.id === id), 'new DevTools target');
     await browser.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads, eventsEnabled: true });
     const seenCandidates = new Map();
+    stage('worker-identity');
     const worker = await until(async () => {
       const matching = [];
       for (const target of (await targets()).filter(target => target.type === 'service_worker' && /^chrome-extension:\/\/[a-p]{32}\/background\.js$/.test(target.url))) {
@@ -300,12 +337,21 @@ try {
     assert.deepEqual(installed.granted.origins, [], 'No effective host permissions granted');
     report.extension = { id: installed.id, workerUrl: worker.url, version: installed.manifest.version, name: installed.manifest.name, grantedPermissions: installed.granted };
     workerClient.close();
-    check('real-unpacked-installation-service-worker-target', report.extension);
+    check('real-unpacked-installation-service-worker-target', { extension: report.extension });
 
+    stage('policy-ui');
     const policyTarget = await browser.send('Target.createTarget', { url: 'chrome://policy/' });
     const policy = await attach(await targetForId(policyTarget.targetId));
-    await until(() => policy.evaluate("document.readyState === 'complete' && Boolean(document.querySelector('#export-policies'))"), 'Chrome policy UI');
-    await policy.evaluate("document.querySelector('#export-policies').click()");
+    activeClient = policy;
+    await diagnostics(policy, 'policy-created');
+    await policy.evaluate("(async () => { await customElements.whenDefined('policy-app'); const app=document.querySelector('policy-app'); if(!app)throw Error('Missing policy-app'); await app.updateComplete; return true; })()");
+    await until(() => policy.evaluate("document.readyState === 'complete' && Boolean(document.querySelector('policy-app')?.shadowRoot?.querySelector('cr-button#more-actions-button')) && Boolean(document.querySelector('policy-app')?.shadowRoot?.querySelector('cr-action-menu#actionMenu')?.querySelector('button#export-policies'))"), 'exact Chrome 156 policy-app shadow controls');
+    await clickPolicyControl(policy, 'more-actions-button');
+    await policy.evaluate("(async () => { const menu=document.querySelector('policy-app')?.shadowRoot?.querySelector('cr-action-menu#actionMenu'); if(!menu)throw Error('Missing exact policy actions menu'); await menu.updateComplete; return true; })()");
+    await until(() => policy.evaluate("(() => { const menu=document.querySelector('policy-app')?.shadowRoot?.querySelector('cr-action-menu#actionMenu'); const e=menu?.querySelector('button#export-policies');if(!menu?.open||!e)return false;const r=e.getBoundingClientRect();return r.width>0&&r.height>0; })()"), 'policy export button visible in the opened actions menu');
+    await diagnostics(policy, 'policy-menu-open');
+    stage('policy-export');
+    await clickPolicyControl(policy, 'export-policies');
     const policyFilename = await until(async () => (await readdir(downloads)).find(name => name.endsWith('.json')), 'actual Chrome policy export');
     const policyExport = JSON.parse(await readFile(path.join(downloads, policyFilename), 'utf8'));
     const policyEvidence = unmanagedPolicyExport(policyExport);
@@ -313,8 +359,10 @@ try {
     await screenshot(policy, '01-policy.png');
     await rm(path.join(downloads, policyFilename));
     await browser.send('Target.closeTarget', { targetId: policyTarget.targetId }); policy.close();
+    activeClient = undefined;
     check('runtime-browser-policy-export-empty');
 
+    stage('native-action');
     const calculatorUrl = `chrome-extension://${installed.id}/index.html`;
     const action = { method: 'X11 native keyboard via xdotool', syntheticChromeApiEvent: false, attempts: [], success: false };
     // Real browser UI events only. Never invoke chrome.action listeners through DevTools.
@@ -347,6 +395,8 @@ try {
     await json('native-action.json', action);
     execFileSync('scrot', [path.join(output, 'screenshots', '03-native-after.png')], { timeout: 5000 });
     page = await attach(calculatorTarget);
+    activeClient = page;
+    stage('calculator-online');
     const unexpectedErrors = [], externalRequests = [];
     page.on('Runtime.exceptionThrown', event => unexpectedErrors.push(event.exceptionDetails.text));
     page.on('Network.requestWillBeSent', event => { if (/^https?:/.test(event.request.url)) externalRequests.push(event.request.url); });
@@ -367,6 +417,7 @@ try {
     assert.equal(await page.evaluate("document.querySelector('#results-content').hidden"), false, 'Submission renders the changed calculation');
     check('installed-extension-ui-known-calculation-comma-and-dot', known);
     await screenshot(page, '04-calculation.png');
+    stage('csv-online');
     await click(page, '#export-csv');
     const csvName = await until(async () => (await readdir(downloads)).find(name => name.endsWith('.csv')), 'real CSV file download');
     const csv = await readFile(path.join(downloads, csvName), 'utf8'), rows = csvRows(csv);
@@ -377,6 +428,7 @@ try {
     await writeFile(path.join(output, 'export.csv'), csv);
     check('real-csv-download-numeric-values-and-formula-protection', { filename: csvName, bytes: Buffer.byteLength(csv), sha256: createHash('sha256').update(csv).digest('hex') });
 
+    stage('offline-reload');
     await page.send('Network.setCacheDisabled', { cacheDisabled: true });
     await page.send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
     const beforeOfflineReload = loadEvents;
@@ -384,6 +436,7 @@ try {
     await until(async () => loadEvents > beforeOfflineReload && await page.evaluate("document.readyState === 'complete' && document.querySelector('#portion-cost')?.textContent === '2,50 €' && document.querySelector('#version')?.textContent === '1.0.0'"), 'actual offline extension reload');
     const offlineSeed = await page.evaluate("({url:location.href,online:navigator.onLine,navigationType:performance.getEntriesByType('navigation')[0]?.type,portion:document.querySelector('#portion-cost').textContent,foodCost:document.querySelector('#food-cost').textContent})");
     assert.equal(offlineSeed.online, false); assert.equal(offlineSeed.navigationType, 'reload'); assert.equal(offlineSeed.url, calculatorUrl); assert.equal(offlineSeed.foodCost, '25,0 %');
+    stage('offline-recalculation');
     await page.evaluate("(() => { const field=document.querySelector('#portions'); field.value='6'; field.dispatchEvent(new Event('input',{bubbles:true})); })()");
     assert.equal(await page.evaluate("document.querySelector('#results-content').hidden"), true, 'Offline input change invalidates the reloaded seed');
     await click(page, 'button[type="submit"]');
@@ -392,6 +445,7 @@ try {
     assert.notEqual(offline.portion, offlineSeed.portion, 'Offline recalculation changes the result after a real reload');
     await screenshot(page, '05-offline-reload.png');
     check('offline-hard-reload-and-changed-recalculation', { cacheDisabled: true, ignoreCache: true, networkOffline: true, reloadedSeed: offlineSeed, recalculated: offline });
+    stage('csv-offline');
     const existingDownloads = new Set(await readdir(downloads));
     await click(page, '#export-csv');
     const offlineCsvName = await until(async () => (await readdir(downloads)).find(name => name.endsWith('.csv') && !existingDownloads.has(name)), 'real offline CSV download after recalculation');
@@ -404,6 +458,7 @@ try {
     assert.deepEqual(unexpectedErrors, [], 'No unhandled runtime exceptions');
     check('no-calculator-http-requests-or-runtime-exceptions');
 
+    stage('runtime-csp');
     const csp = await page.evaluate(`new Promise(resolve => {
       const violations=[]; const listener=e=>violations.push({directive:e.effectiveDirective,blockedURI:e.blockedURI});
       document.addEventListener('securitypolicyviolation',listener);
@@ -419,9 +474,22 @@ try {
   report.status = 'failed'; report.error = { name: error.name, message: error.message };
   process.exitCode = 1;
 } finally {
+  if (browser) {
+    try {
+      if (!activeClient && getTargets) {
+        const target = (await getTargets()).find(target => target.type === 'page' && target.webSocketDebuggerUrl);
+        if (target) activeClient = await CDP.connect(target.webSocketDebuggerUrl);
+      }
+      if (activeClient) await diagnostics(activeClient, 'finally-' + (report.stage || 'unknown'));
+    } catch (error) { report.finalDiagnosticError = error.message; }
+  }
+  if (browserProcess && process.env.DISPLAY) {
+    try { execFileSync('scrot', [path.join(output, 'screenshots', 'diagnostic-final-native.png')], { timeout: 5000 }); }
+    catch (error) { report.finalNativeScreenshotError = error.message; }
+  }
   if (browserProcess) await writeFile(path.join(output, 'browser.log'), browserLog);
   if (browser) { try { await browser.send('Browser.close'); } catch { /* The process may already have exited. */ } }
-  page?.close(); browser?.close();
+  activeClient?.close(); if (page !== activeClient) page?.close(); browser?.close();
   if (browserProcess && browserProcess.exitCode === null) { browserProcess.kill('SIGTERM'); await pause(300); if (browserProcess.exitCode === null) browserProcess.kill('SIGKILL'); }
   if (temporary) await rm(temporary, { recursive: true, force: true });
   report.completedAt = new Date().toISOString();

@@ -109,6 +109,12 @@ Sept contrats ciblés refusent les composants, versions différentes, noms/CSP m
 node scripts/qa-extension.mjs --self-test-identity
 ```
 
+Le [deuxième run 40649755650](https://github.com/Cyrilquesnel/onrush-food-cost/actions/runs/40649755650), au commit `9784672e7af8160ef3d3fbe2c347c8fff3104c6d`, a confirmé la sélection de l’extension Onrush `1.0.0` et ses permissions API/hôtes vides. Le composant Chrome `ContextualTasks` version `1.0` a été distingué et refusé. Le run a ensuite échoué sur le sélecteur du bouton d’export des politiques ; l’artefact porte l’ID `12798897864`. L’action native, les calculs et les contrôles suivants n’ont pas encore été exécutés avec succès.
+
+Dans [le template exact Chrome 156](https://github.com/chromium/chromium/blob/156.0.8078.73/components/policy/resources/webui/policy_app.html.ts#L26), `cr-button#more-actions-button` et `cr-action-menu#actionMenu` sont dans **`policy-app.shadowRoot`**. Le bouton `button#export-policies` est un enfant du menu, initialement fermé. Le correctif attend la définition et le rendu du composant, ouvre ce menu via un événement souris, exige `menu.open` et un bouton visible, puis déclenche le téléchargement réel. Les [handlers d’ouverture et d’export](https://github.com/chromium/chromium/blob/156.0.8078.73/components/policy/resources/webui/policy_app.ts#L217) confirment ce chemin. La validation du fichier `policyGroups` reste inchangée et stricte.
+
+Avant l’attente du DOM et à l’ouverture du menu, des diagnostics enregistrent les tags, IDs, rôles et chemins de shadow DOM, ainsi qu’une capture. Le bloc `finally` tente également un diagnostic de la page active et une capture native pour toute étape atteinte, même après une exception. Les valeurs des champs de saisie et les valeurs de politiques ne sont pas sérialisées dans ces diagnostics. Une erreur de diagnostic est consignée sans remplacer l’échec du contrôle initial. Le nom machine du contrôle d’installation est conservé, les métadonnées de l’extension étant rangées sous `extension`.
+
 ## Rapports et portée de la conclusion
 
 Le workflow conserve pendant sept jours les rapports JSON, captures PNG, CSV de test et journaux explicitement sélectionnés dans `qa-artifacts/`, ainsi que commit source, SHA du ZIP extension, version Node, version Chrome et provenance du téléchargement Chrome. Il n’archive ni le binaire Chrome, ni un profil navigateur, ni un cache complet.

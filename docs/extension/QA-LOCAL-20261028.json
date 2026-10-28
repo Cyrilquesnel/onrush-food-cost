@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "createdAt": "2026-10-28T07:21:32.298Z",
+  "createdAt": "2026-10-28T07:28:53.051Z",
   "repository": "Cyrilquesnel/onrush-food-cost",
   "release": {
     "version": "1.0.0",
@@ -22,7 +22,7 @@
   "notes": [
     "No Chrome Web Store submission or signed CRX installation is tested."
   ],
-  "completedAt": "2026-10-28T07:21:32.336Z",
+  "completedAt": "2026-10-28T07:28:53.074Z",
   "existingTests": {
     "command": "node --test test/*.test.js",
     "passed": 16,
@@ -70,7 +70,7 @@
     "hostPermissionsDeclared": false
   },
   "validationContext": {
-    "baseCommit": "88548eadd10f96be9f929e620468a95215713390",
+    "baseCommit": "9784672e7af8160ef3d3fbe2c347c8fff3104c6d",
     "localNode": "v24.19.0",
     "expectedRunnerNode": "22.23.4",
     "repositoryPublicVerifiedVia": "GET https://api.github.com/repos/Cyrilquesnel/onrush-food-cost : private=false, visibility=public",
@@ -102,7 +102,7 @@
   "preparedFiles": [
     {
       "path": "scripts/qa-extension.mjs",
-      "sha256": "e65fa0b2b7d76065555d530f3151aacf6bf6614f79b02c2912b25daa607551cd"
+      "sha256": "d818da8588c113288df31ace0507168b953e2da2e9a1080c7abb12910d29e5b5"
     },
     {
       "path": ".github/workflows/extension-qa.yml",
@@ -110,12 +110,51 @@
     },
     {
       "path": "docs/extension/QA-ISOLATED.md",
-      "sha256": "8678b63b950d869b68e4eedc098b68d6b00fd11350e970cd6ba8352d126d88c3"
+      "sha256": "1096f1203efce5858f4bf729cc4a910aed64a982022c5d57a4f95a9d8dd88c96"
     }
   ],
   "consoleReport": {
     "prefix": "QA_REPORT ",
     "format": "one-line JSON",
     "scope": "own temporary unmanaged browser; no account, secrets or policy values"
+  },
+  "secondRemoteRun": {
+    "runId": 40649755650,
+    "sourceCommit": "9784672e7af8160ef3d3fbe2c347c8fff3104c6d",
+    "artifactId": 12798897864,
+    "status": "failed",
+    "source": "QA_REPORT parsed by coordinator",
+    "verifiedExtensionVersion": "1.0.0",
+    "verifiedApiPermissions": [],
+    "verifiedHostPermissions": [],
+    "rejectedComponent": {
+      "name": "ContextualTasks",
+      "version": "1.0"
+    },
+    "failedStage": "Chrome policy UI",
+    "error": "Timeout: Chrome policy UI",
+    "completeBrowserQaPassed": false
+  },
+  "preparedPolicyUiRepair": {
+    "sourceTag": "156.0.8078.73",
+    "shadowHost": "policy-app",
+    "openControl": "cr-button#more-actions-button",
+    "menu": "cr-action-menu#actionMenu",
+    "exportControl": "button#export-policies",
+    "requireMenuOpen": true,
+    "requireVisibleControl": true,
+    "awaitLitUpdateComplete": true,
+    "strictPolicyJsonUnchanged": true,
+    "status": "prepared, not browser-executed"
+  },
+  "preparedDiagnostics": {
+    "atPolicyCreation": true,
+    "atOpenedPolicyMenu": true,
+    "finallyActivePage": true,
+    "finallyNativeScreenshot": true,
+    "includesTagsIdsShadowPaths": true,
+    "includesInputValues": false,
+    "includesPolicyValues": false,
+    "status": "prepared, not browser-executed"
   }
 }
