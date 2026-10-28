@@ -150,7 +150,7 @@ function unmanagedPolicyExport(value) {
   };
   dictionary(value, 'policy export');
   const groups = dictionary(value.policyGroups, 'policyGroups');
-  assert.deepEqual(Object.keys(groups).sort(), ['chrome', 'extensions', 'precedence'], 'Only the known Chrome 156 Linux policy groups are accepted');
+  assert.deepEqual(Object.keys(groups).sort(), ['chrome', 'extensionInstall', 'extensions', 'precedence'], 'Only the known Chrome 156 Linux policy groups are accepted');
   const chrome = dictionary(groups.chrome, 'policyGroups.chrome');
   const policies = dictionary(chrome.policies, 'policyGroups.chrome.policies');
   assert.deepEqual(Object.keys(policies), [], 'Browser must have no configured Chrome policies');
@@ -160,11 +160,16 @@ function unmanagedPolicyExport(value) {
   assert.ok(Array.isArray(precedence.precedenceOrder) && precedence.precedenceOrder.length === 4 && precedence.precedenceOrder.every(entry => typeof entry === 'string' && entry.trim()), 'Expected four precedence-order metadata labels');
   const extensions = dictionary(groups.extensions, 'policyGroups.extensions');
   assert.deepEqual(Object.keys(extensions), [], 'This release has no managed extension schema: no extension policy provider is expected');
-  return { schema: 'Chrome 156 Linux policyGroups', configuredChromePolicyNames: [], configuredPrecedencePolicyNames: [], configuredExtensionPolicyGroups: [], valuesRecorded: false };
+  const install = dictionary(groups.extensionInstall, 'policyGroups.extensionInstall');
+  assert.deepEqual(Object.keys(install).sort(), ['name', 'policies'], 'Exact extension installation provider shape required');
+  assert.equal(install.name, 'Extension Install Policies', 'Exact extension installation provider name required');
+  const installPolicies = dictionary(install.policies, 'policyGroups.extensionInstall.policies');
+  assert.deepEqual(Object.keys(installPolicies), [], 'No configured extension installation policies');
+  return { schema: 'Chrome 156 Linux policyGroups', configuredChromePolicyNames: [], configuredPrecedencePolicyNames: [], configuredExtensionPolicyGroups: [], configuredExtensionInstallPolicyNames: [], valuesRecorded: false };
 }
 async function policyContracts() {
   const { test } = await import('node:test');
-  const fixture = () => ({ policyGroups: { chrome: { policies: {} }, precedence: { policies: {}, precedenceOrder: ['Platform machine', 'Cloud machine', 'Platform user', 'Cloud user'] }, extensions: {} } });
+  const fixture = () => ({ policyGroups: { chrome: { policies: {} }, precedence: { policies: {}, precedenceOrder: ['Platform machine', 'Cloud machine', 'Platform user', 'Cloud user'] }, extensions: {}, extensionInstall: { name: 'Extension Install Policies', policies: {} } } });
   test('policy export: explicit unmanaged Chrome 156 Linux schema passes', () => { assert.equal(unmanagedPolicyExport(fixture()).schema, 'Chrome 156 Linux policyGroups'); });
   test('policy export: old root chromePolicies is rejected', () => { assert.throws(() => unmanagedPolicyExport({ chromePolicies: {}, extensionPolicies: {} })); });
   test('policy export: obsolete policyValues spelling is rejected', () => { assert.throws(() => unmanagedPolicyExport({ policyValues: fixture().policyGroups })); });
@@ -176,6 +181,11 @@ async function policyContracts() {
   test('policy export: missing extensions or Linux precedence group is refused', () => { for (const group of ['extensions', 'precedence']) { const f = fixture(); delete f.policyGroups[group]; assert.throws(() => unmanagedPolicyExport(f)); } });
   test('policy export: arrays/null cannot stand in for policy dictionaries', () => { for (const value of [[], null]) { const f = fixture(); f.policyGroups.chrome.policies = value; assert.throws(() => unmanagedPolicyExport(f)); } });
   test('policy export: missing or malformed precedence metadata is refused', () => { for (const value of [undefined, [], ['one'], ['one', 'two', 'three', '']]) { const f = fixture(); f.policyGroups.precedence.precedenceOrder = value; assert.throws(() => unmanagedPolicyExport(f)); } });
+  test('policy export: extensionInstall is required and must be a dictionary', () => { const missing = fixture(); delete missing.policyGroups.extensionInstall; assert.throws(() => unmanagedPolicyExport(missing)); for (const value of [null, [], '', undefined]) { const f = fixture(); f.policyGroups.extensionInstall = value; assert.throws(() => unmanagedPolicyExport(f)); } });
+  test('policy export: extensionInstall provider name is exact and required', () => { const missing = fixture(); delete missing.policyGroups.extensionInstall.name; assert.throws(() => unmanagedPolicyExport(missing)); const f = fixture(); f.policyGroups.extensionInstall.name = 'Other'; assert.throws(() => unmanagedPolicyExport(f)); });
+  test('policy export: extensionInstall policies cannot be absent or an empty non-dictionary', () => { const missing = fixture(); delete missing.policyGroups.extensionInstall.policies; assert.throws(() => unmanagedPolicyExport(missing)); for (const value of [null, [], '', undefined]) { const f = fixture(); f.policyGroups.extensionInstall.policies = value; assert.throws(() => unmanagedPolicyExport(f)); } });
+  test('policy export: configured extension installation policies are refused', () => { const f = fixture(); f.policyGroups.extensionInstall.policies.test = { value: 'blocked' }; assert.throws(() => unmanagedPolicyExport(f)); });
+  test('policy export: unknown extensionInstall metadata is refused', () => { const f = fixture(); f.policyGroups.extensionInstall.unrecognized = {}; assert.throws(() => unmanagedPolicyExport(f)); });
 }
 function exactReleaseWorker(candidate, expected) {
   const manifest = candidate?.manifest;
@@ -210,20 +220,25 @@ async function diagnostics(client, stage) {
   const evidence = { stage, at: new Date().toISOString(), inputValuesRecorded: false };
   try {
     evidence.dom = await client.evaluate(`(() => {
-      const controls=[], shadowHosts=[];
-      const visit=(root,chain=[])=>{ for(const node of root.querySelectorAll('*')) {
-        if(controls.length<250 && node.matches('button,cr-button,cr-icon-button,a,input,select,[role="button"],[role="dialog"]')) {
-          const r=node.getBoundingClientRect(); controls.push({tag:node.localName,id:node.id,role:node.getAttribute('role'),label:node.getAttribute('aria-label'),buttonText:node.matches('button')?node.textContent.trim().slice(0,100):undefined,disabled:Boolean(node.disabled),visible:r.width>0&&r.height>0,shadowChain:chain});
+      const controls=[], shadowHosts=[], uniquePaths=new Set();let visited=0, skippedPolicyTrees=0, truncated=false;
+      const text=value=>typeof value==='string'?value.slice(0,100):value;
+      const visit=(root,chain=[],depth=0)=>{ if(depth>20||visited>=500){truncated=true;return;}for(const node of root.children||[]) {
+        if(visited++>=500){truncated=true;return;}
+        if(node.localName==='policy-table'||node.localName==='policy-row'){skippedPolicyTrees++;continue;}
+        if(node.matches('button,cr-button,cr-icon-button,a,input,select,[role="button"],[role="dialog"]')) {
+          if(controls.length<40){ const r=node.getBoundingClientRect(); controls.push({tag:node.localName,id:text(node.id),role:text(node.getAttribute('role')),label:text(node.getAttribute('aria-label')),buttonText:node.matches('button')?node.textContent.trim().slice(0,80):undefined,disabled:Boolean(node.disabled),visible:r.width>0&&r.height>0,shadowChain:chain}); }else truncated=true;
         }
-        if(node.shadowRoot){ const host=node.localName+(node.id?'#'+node.id:'');shadowHosts.push([...chain,host]);visit(node.shadowRoot,[...chain,host]); }
+        if(node.shadowRoot&&chain.length<8){ const host=node.localName+(node.id?'#'+text(node.id):'');const next=[...chain,host], key=next.join(' > ');if(!uniquePaths.has(key)){if(shadowHosts.length<30){uniquePaths.add(key);shadowHosts.push(next);}else truncated=true;}visit(node.shadowRoot,next,depth+1); }
+        visit(node,chain,depth+1);
       }};
-      visit(document);return {url:location.href,title:document.title,readyState:document.readyState,shadowHosts,controls};
+      visit(document);return {url:location.href,title:document.title,readyState:document.readyState,limits:{controls:40,uniqueShadowPaths:30,visitedElements:500,depth:20},visited,skippedPolicyTrees,truncated,shadowHosts,controls};
     })()`);
   } catch (error) { evidence.domError = error.message; }
   try { await screenshot(client, `diagnostic-${name}.png`); evidence.screenshot = `screenshots/diagnostic-${name}.png`; }
   catch (error) { evidence.screenshotError = error.message; }
-  await json(`diagnostic-${name}.json`, evidence);
-  (report.diagnostics ||= []).push(evidence);
+  const file = `diagnostic-${name}.json`;
+  await json(file, evidence);
+  (report.diagnostics ||= []).push({ stage, file, screenshot: evidence.screenshot, controlCount: evidence.dom?.controls.length, uniqueShadowPathCount: evidence.dom?.shadowHosts.length, skippedPolicyTrees: evidence.dom?.skippedPolicyTrees, truncated: evidence.dom?.truncated, domError: evidence.domError, screenshotError: evidence.screenshotError });
 }
 async function clickPolicyControl(client, id) {
   assert.ok(['more-actions-button', 'export-policies'].includes(id), 'Only source-verified policy controls may be clicked');

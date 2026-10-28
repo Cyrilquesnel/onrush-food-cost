@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "createdAt": "2026-10-28T07:28:53.051Z",
+  "createdAt": "2026-10-28T07:35:08.883Z",
   "repository": "Cyrilquesnel/onrush-food-cost",
   "release": {
     "version": "1.0.0",
@@ -22,7 +22,7 @@
   "notes": [
     "No Chrome Web Store submission or signed CRX installation is tested."
   ],
-  "completedAt": "2026-10-28T07:28:53.074Z",
+  "completedAt": "2026-10-28T07:35:08.913Z",
   "existingTests": {
     "command": "node --test test/*.test.js",
     "passed": 16,
@@ -31,10 +31,10 @@
   },
   "policyGuardContracts": {
     "command": "node scripts/qa-extension.mjs --self-test-policy",
-    "passed": 11,
+    "passed": 16,
     "failed": 0,
     "skipped": 0,
-    "schema": "Chrome156 Linux policyGroups.chrome/precedence/extensions, explicit empty policy dictionaries"
+    "schema": "Chrome156 Linux policyGroups.chrome/precedence/extensions/extensionInstall; all explicit policy dictionaries empty"
   },
   "changedUiScenarios": {
     "online": {
@@ -70,7 +70,7 @@
     "hostPermissionsDeclared": false
   },
   "validationContext": {
-    "baseCommit": "9784672e7af8160ef3d3fbe2c347c8fff3104c6d",
+    "baseCommit": "b15ec73b682121a7a2362b81ff03335a5ee22751",
     "localNode": "v24.19.0",
     "expectedRunnerNode": "22.23.4",
     "repositoryPublicVerifiedVia": "GET https://api.github.com/repos/Cyrilquesnel/onrush-food-cost : private=false, visibility=public",
@@ -102,7 +102,7 @@
   "preparedFiles": [
     {
       "path": "scripts/qa-extension.mjs",
-      "sha256": "d818da8588c113288df31ace0507168b953e2da2e9a1080c7abb12910d29e5b5"
+      "sha256": "7fef22bd371d6504da241c3f2366ff2e6b565c607713ff4cea82a8952cc61f00"
     },
     {
       "path": ".github/workflows/extension-qa.yml",
@@ -110,7 +110,7 @@
     },
     {
       "path": "docs/extension/QA-ISOLATED.md",
-      "sha256": "1096f1203efce5858f4bf729cc4a910aed64a982022c5d57a4f95a9d8dd88c96"
+      "sha256": "eeeaab499a25c7faeb4015c876660001d50c0cac6170f70e8a5ae524453840f6"
     }
   ],
   "consoleReport": {
@@ -155,6 +155,40 @@
     "includesTagsIdsShadowPaths": true,
     "includesInputValues": false,
     "includesPolicyValues": false,
-    "status": "prepared, not browser-executed"
+    "status": "prepared, not browser-executed",
+    "skipSubtrees": [
+      "policy-table",
+      "policy-row"
+    ],
+    "limits": {
+      "uniqueShadowPaths": 30,
+      "controls": 40,
+      "visitedElements": 500,
+      "depth": 20
+    },
+    "detailedDomInConsole": false,
+    "diagnosticDetailsStoredInSeparateFiles": true
+  },
+  "thirdRemoteRun": {
+    "runId": 40650655161,
+    "sourceCommit": "b15ec73b682121a7a2362b81ff03335a5ee22751",
+    "jobId": 122689688528,
+    "artifactId": 12798879153,
+    "artifactDigest": "37c3bb08f43aecd7b1afa3b965335afc27fc7dfacec800383a84a79a0b337dce",
+    "status": "failed",
+    "source": "QA_REPORT parsed by coordinator",
+    "realPolicyExportObserved": true,
+    "failedGate": "unknown extensionInstall policy group",
+    "completeBrowserQaPassed": false
+  },
+  "preparedExtensionInstallGuard": {
+    "exactKeys": [
+      "name",
+      "policies"
+    ],
+    "name": "Extension Install Policies",
+    "policies": "explicit empty dictionary",
+    "missingOrWrongTypeAccepted": false,
+    "configuredPoliciesAccepted": false
   }
 }
