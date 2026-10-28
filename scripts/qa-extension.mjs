@@ -252,6 +252,20 @@ async function clickPolicyControl(client, id) {
   await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
   await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...point });
 }
+async function clickToolbarPin(client, extensionId) {
+  const point = await client.evaluate(`(() => {
+    const detail=document.querySelector('extensions-manager')?.shadowRoot?.querySelector('extensions-detail-view');
+    if(detail?.data?.id!==${JSON.stringify(extensionId)})throw Error('Wrong extension details identity');
+    const row=detail.shadowRoot?.querySelector('extensions-toggle-row#pin-to-toolbar');
+    const toggle=row?.shadowRoot?.querySelector('cr-toggle#crToggle');
+    if(!row||!toggle)throw Error('Missing exact toolbar pin UI control');
+    row.scrollIntoView({block:'center'});const r=toggle.getBoundingClientRect();
+    if(!(r.width>0&&r.height>0))throw Error('Toolbar pin UI control is not visible');
+    return {x:r.x+r.width/2,y:r.y+r.height/2};
+  })()`);
+  await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
+  await client.send('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...point });
+}
 async function click(client, selector) {
   const point = await client.evaluate(`(() => { const element = document.querySelector(${JSON.stringify(selector)}); if (!element) throw Error('Missing control'); element.scrollIntoView({block:'center'}); const r=element.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
   await client.send('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
@@ -377,9 +391,28 @@ try {
     activeClient = undefined;
     check('runtime-browser-policy-export-empty');
 
-    stage('native-action');
     const calculatorUrl = `chrome-extension://${installed.id}/index.html`;
-    const action = { method: 'X11 native keyboard via xdotool', syntheticChromeApiEvent: false, attempts: [], success: false };
+    stage('toolbar-pin-ui-setup');
+    const detailsTarget = await browser.send('Target.createTarget', { url: `chrome://extensions/?id=${installed.id}` });
+    const details = await attach(await targetForId(detailsTarget.targetId));
+    activeClient = details;
+    await details.evaluate("(async () => { await customElements.whenDefined('extensions-manager'); const manager=document.querySelector('extensions-manager'); if(!manager)throw Error('Missing extensions-manager'); await manager.updateComplete; return true; })()");
+    await until(() => details.evaluate(`document.querySelector('extensions-manager')?.shadowRoot?.querySelector('extensions-detail-view')?.data?.id===${JSON.stringify(installed.id)}`), 'details view for the exact installed extension');
+    await details.evaluate("(async () => { const detail=document.querySelector('extensions-manager').shadowRoot.querySelector('extensions-detail-view'); await detail.updateComplete; const row=detail.shadowRoot.querySelector('extensions-toggle-row#pin-to-toolbar'); if(!row)throw Error('Missing pin-to-toolbar row'); await row.updateComplete; return true; })()");
+    const pinState = () => details.evaluate("(() => { const detail=document.querySelector('extensions-manager')?.shadowRoot?.querySelector('extensions-detail-view'); const row=detail?.shadowRoot?.querySelector('extensions-toggle-row#pin-to-toolbar'); return {id:detail?.data?.id,checked:row?.checked,pinnedToToolbar:detail?.data?.pinnedToToolbar}; })()");
+    const beforePin = await pinState();
+    assert.equal(beforePin.id, installed.id); assert.equal(typeof beforePin.checked, 'boolean');
+    await diagnostics(details, 'toolbar-pin-before');
+    if (!beforePin.checked) await clickToolbarPin(details, installed.id);
+    const afterPin = await until(async () => { const state = await pinState(); return state.id === installed.id && state.checked === true && state.pinnedToToolbar === true && state; }, 'real toolbar pin setting confirmed by the details view');
+    check('toolbar-pin-ui-setup-only', { extensionId: installed.id, before: beforePin, after: afterPin, actionActivated: false });
+    await diagnostics(details, 'toolbar-pin-after');
+    await browser.send('Target.closeTarget', { targetId: detailsTarget.targetId }); details.close(); activeClient = undefined;
+
+    stage('native-action');
+    const beforeActionTargets = new Set((await targets()).map(target => target.id));
+    assert.equal((await targets()).some(target => target.type === 'page' && target.url === calculatorUrl), false, 'Pin setup must not have opened the calculator');
+    const action = { method: 'X11 native keyboard via xdotool', pinnedViaUi: true, syntheticChromeApiEvent: false, attempts: [], success: false };
     // Real browser UI events only. Never invoke chrome.action listeners through DevTools.
     const windowIds = execFileSync('xdotool', ['search', '--onlyvisible', '--pid', String(browserProcess.pid)], { encoding: 'utf8', timeout: 5000 }).trim().split(/\s+/);
     assert.ok(windowIds[0], 'Native browser window found');
@@ -390,18 +423,18 @@ try {
       const keys = ['Escape', 'Escape', 'alt+shift+t', ...Array(tabs).fill('Tab'), 'space'];
       execFileSync('xdotool', ['key', '--clearmodifiers', ...keys], { timeout: 5000 });
       await pause(250);
-      calculatorTarget = (await targets()).find(target => target.type === 'page' && target.url === calculatorUrl);
+      calculatorTarget = (await targets()).find(target => target.type === 'page' && target.url === calculatorUrl && !beforeActionTargets.has(target.id));
       let menuKeys = [];
       if (!calculatorTarget) {
         menuKeys = ['Down', 'Return'];
         execFileSync('xdotool', ['key', '--clearmodifiers', ...menuKeys], { timeout: 5000 });
         await pause(350);
-        calculatorTarget = (await targets()).find(target => target.type === 'page' && target.url === calculatorUrl);
+        calculatorTarget = (await targets()).find(target => target.type === 'page' && target.url === calculatorUrl && !beforeActionTargets.has(target.id));
       }
       action.attempts.push({ tabs, keys, menuKeys, openedExtensionTarget: Boolean(calculatorTarget), at: new Date().toISOString() });
     }
     action.success = Boolean(calculatorTarget);
-    if (action.success) check('native-browser-action-opens-extension-owned-tab', { targetUrl: calculatorTarget.url });
+    if (action.success) check('native-browser-action-opens-extension-owned-tab', { targetUrl: calculatorTarget.url, newTargetId: calculatorTarget.id, activation: 'X11 toolbar keyboard after UI pin setup' });
     else {
       report.gaps.push('Native toolbar/action activation was not automated successfully. Direct extension navigation below is not an action test.');
       const direct = await browser.send('Target.createTarget', { url: calculatorUrl });
@@ -441,7 +474,10 @@ try {
     assert.ok(rows.some(row => row[0] === 'Métadonnée' && row[1] === "'=1+1"));
     assert.ok(rows.some(row => row[0] === 'Ingrédient' && row[1] === "'+QA"));
     await writeFile(path.join(output, 'export.csv'), csv);
-    check('real-csv-download-numeric-values-and-formula-protection', { filename: csvName, bytes: Buffer.byteLength(csv), sha256: createHash('sha256').update(csv).digest('hex') });
+    // Browser.setDownloadBehavior(allow) may reuse a filename. Keep the evidence,
+    // then remove only this completed download inside the disposable directory.
+    await rm(path.join(downloads, csvName));
+    check('real-csv-download-numeric-values-and-formula-protection', { filename: csvName, archivedAs: 'export.csv', temporaryDownloadRemoved: true, bytes: Buffer.byteLength(csv), sha256: createHash('sha256').update(csv).digest('hex') });
 
     stage('offline-reload');
     await page.send('Network.setCacheDisabled', { cacheDisabled: true });
