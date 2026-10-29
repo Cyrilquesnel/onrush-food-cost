@@ -6,3 +6,5 @@
 a{color:var(--sc-blue-france)}.brand{color:var(--sc-navy)}.primary-button:hover{background:var(--sc-marine)}.results a{color:var(--sc-blue-on-dark)}.results :focus-visible{outline-color:var(--sc-blue-on-dark)}.secondary-button{background:var(--sc-surface);color:var(--sc-marine);border-color:var(--sc-surface)}.secondary-button:hover{background:var(--sc-surface-high)}.intro-copy,.method-copy p,.privacy p,.privacy li{color:var(--sc-text-body)}
 
 h1{font-weight:900}h2{font-weight:800}h3{font-weight:700}.main-result strong{font-weight:900}
+
+.sheet-links{list-style:none;padding:0;margin:0 0 22px}.sheet-links a{display:block;min-height:44px;padding:10px 0;font-size:13px;font-weight:700}

@@ -14,6 +14,13 @@ Ce répertoire contient exclusivement du code neuf pour cet outil autonome. Aucu
 
 Dépôt du projet : [Cyrilquesnel/onrush-food-cost](https://github.com/Cyrilquesnel/onrush-food-cost). La démonstration publique utilise une copie statique de cet outil, distincte du SaaS Onrush.
 
+## Modèles Google Sheets
+
+- [Coût matière et food cost par portion](https://docs.google.com/spreadsheets/d/1sblUDCn1eLpF93rIg6KigCm72hniUkZzfOf1IoUd_Z8/edit).
+- [Seuil de rentabilité et couverts par jour](https://docs.google.com/spreadsheets/d/1c12rcZkoB9hNI_7uxvCbhfo1mDPBVggwsi_FU4TW_Us/edit).
+
+Les deux modèles sont publics en lecture seule et contiennent des exemples fictifs. Pour saisir vos données, ouvrez un modèle puis créez votre copie dans Google Sheets. Une copie est hébergée par Google ; les originaux restent non modifiables par les visiteurs.
+
 ## Utilisation et calcul
 
 Renseigner pour chaque ingrédient son prix d’achat **HT** par kg, litre ou unité, la quantité nette utilisée pour la recette entière et son rendement de préparation. Indiquer ensuite le nombre de portions et, éventuellement, le prix de vente HT par portion.
@@ -58,6 +65,8 @@ La construction produit :
 - `dist/chrome-extension.zip` : paquet d’extension.
 
 Le moteur et le module CSV sont partagés depuis `src/` ; la construction les copie dans les deux distributions. Ils ne doivent pas être recopiés et modifiés séparément. Le paquet ZIP utilise un ordre de fichiers et des métadonnées fixes pour obtenir le même résultat à sources identiques ; reconstruire deux fois et comparer les empreintes permet de vérifier cette propriété.
+
+**Maintenance de Pages :** le bloc de liens Google Sheets de `docs/index.html`, son style `.sheet-links` et la section des modèles de `docs/README.md` sont propres à la publication Pages. Les conserver lors d’une promotion de `dist/site/` vers `docs/`. Cet ajout HTML statique ne modifie pas le ZIP Chrome 1.0.0 publié ; sa qualification reste celle du paquet référencé plus haut.
 
 Pour prévisualiser le site avec le serveur local fourni :
 
